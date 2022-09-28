@@ -141,7 +141,7 @@ class MalhaAberta():
                 ii = ii + 1
 
             # Definição das variáveis de entrada:
-            UU[k,:] = TU[ii, 1:nu]
+            UU[k,:] = self.TU[ii, 1:nu]
 
             # Armazenamento dos valores calculados:
             sol = solve_ivp(self.SYS, [TT[k], TT[k + 1]], YY[k,:], args = tuple(UU[k]), rtol = 1e-6) # ,method="RK45", max_step = dt, atol = 1, rtol = 1)
@@ -377,14 +377,13 @@ class MalhaFechada():
             YY[k+1,:] = sol.y[:,-1]    
 
         # erro = yy_f-YY
-
-        UU[k + 1,:] = TU[ii, 1:nu]
+        UU[k + 1,:] = self.TU[ii, 1:nu]
         UU[k + 1,0] = Uop_T4a
-        SP0_T4a[k + 1] = TU[ii, 1]
+        SP0_T4a[k + 1] = self.TU[ii, 1]
         SP1_T4a[k + 1] = SP1_T4a[k]
 
         UU[k + 1,3] = Uop_h
-        SP_h[k + 1] = TU[ii, 4]
+        SP_h[k + 1] = self.TU[ii, 4]
 
         # Resultados:
         return (TT, YY, UU)
