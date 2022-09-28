@@ -60,10 +60,12 @@ class ChuveiroTurbinadoSimulation():
         self.time = 0
         
         # Definindo TU:
+        # Time,  SP(T4a),   Sa,    xq,  SP(h),      Xs,   Fd,  Td,  Tinf
         TU = np.array(
-        [    #Time,  SP(T4a),   Sa,    xq,  SP(h),      Xs,   Fd,  Td,  Tinf
+        [   
+              [0, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf],
               [self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]
-        ])   
+        ])
 
         # Simulação malha fechada com controladores PID no nível do tanque h e na temperatura final T4a: 
         malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, TU, Kp_T4a = [20.63, 1], Ti_T4a = [1.53, 1e6], 
@@ -115,7 +117,7 @@ class ChuveiroTurbinadoSimulation():
         
         self.time += 10
         
-        self.TU = np.append(self.TU, np.array([self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]), axis=0)
+        self.TU = np.append(self.TU, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
 
         # Simulação malha fechada com controladores PID no nível do tanque h e na temperatura final T4a: 
         malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU, Kp_T4a = [20.63, 1], Ti_T4a = [1.53, 1e6], 
