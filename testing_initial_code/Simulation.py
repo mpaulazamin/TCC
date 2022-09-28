@@ -57,7 +57,7 @@ class ChuveiroTurbinadoSimulation():
         self.SPh = SPh_0
         self.SPT4a = SPT4a_0
         
-        self.time = 0
+        self.time = 1
         
         # Definindo TU:
         # Time,  SP(T4a),   Sa,    xq,  SP(h),      Xs,   Fd,  Td,  Tinf
@@ -170,7 +170,8 @@ class ChuveiroTurbinadoSimulation():
             'room_temperature': self.Tinf,
             'setpoint_tank_level': self.SPh,
             'setpoint_final_temperature': self.SPT4a,
-            'quality_of_shower': self.iqb
+            'quality_of_shower': self.iqb,
+            'final_temperature': self.T4a 
         }
     
     def halted(self) -> bool:
