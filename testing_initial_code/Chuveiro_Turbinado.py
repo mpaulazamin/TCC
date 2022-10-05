@@ -155,9 +155,10 @@ class MalhaAberta():
     
     def compute_iqb(self, T4a, Fs):
 
-        # Índice de qualidade do banho
-        IQB = (1 / np.exp(1)) * np.exp((1 - ((T4a - 38 + 0.02 * (Fs ** 2)) / 2)) * np.power((0.506 + np.log10(np.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
-
+        # Índice de qualidade do banho:
+        # IQB = (1 / np.exp(1)) * np.exp(1 - ((T4a - 38 + 0.02 * (Fs ** 2)) / 2)) * np.power((0.506 + np.log10(np.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20)
+        IQB = (1 / math.e) * math.exp((1 - (T4a - 38 + 0.02 * Fs ** 2) / 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
+    
         return IQB
     
 def PID_p2(SP, 
@@ -242,10 +243,10 @@ class MalhaFechada():
                  SYS,
                  y0,
                  TU,
-                 Kp_T4a = [1,2.41],
-                 Ti_T4a = [0.6,0.1],
-                 Td_T4a = [0,0],
-                 b_T4a = [1,1],
+                 Kp_T4a = [1, 2.41],
+                 Ti_T4a = [0.6, 0.1],
+                 Td_T4a = [0, 0],
+                 b_T4a = [1, 1],
                  Kp_h = 2, 
                  Ti_h = 0.5, 
                  Td_h = 0.0, 
@@ -305,7 +306,6 @@ class MalhaFechada():
         PV1_T4a = np.ones_like(TT) * Yset_bias_T4a[1]
         SP_h = np.zeros_like(TT)
         PV_h = np.ones_like(TT) * Yset_bias_h
-        SP_Tq = np.zeros_like(TT)
         Noise = np.random.normal(0, self.Ruido, len(TT))
 
         YY[-1, 2] = self.y0[2]
@@ -339,8 +339,6 @@ class MalhaFechada():
             SP_h[k] = self.TU[ii, 4]
 
             PV_h[k] = YY[k, 0] + Noise[k]
-
-            SP_Tq[k] = self.TU[ii, 2]
 
             # Armazenamento dos valores calculados:
             #Malha nível
@@ -391,6 +389,192 @@ class MalhaFechada():
     def compute_iqb(self, T4a, Fs):
 
         # Índice de qualidade do banho:
-        IQB = (1 / np.exp(1)) * np.exp((1 - ((T4a - 38 + 0.02 * (Fs ** 2)) / 2)) * np.power((0.506 + np.log10(np.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
+        # IQB = (1 / np.exp(1)) * np.exp(1 - ((T4a - 38 + 0.02 * (Fs ** 2)) / 2)) * np.power((0.506 + np.log10(np.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20)
+        IQB = (1 / math.e) * math.exp((1 - (T4a - 38 + 0.02 * Fs ** 2) / 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
+
+        return IQB
+
+
+    class MalhaFechadaControladorBoiler():
+
+        def __init__(self,
+                     SYS,
+                     y0,
+                     TU,
+                     Kp_T4a = [0.5, 0.5],
+                     Ti_T4a = [0.5, 1e6],
+                     Td_T4a = [0, 0],
+                     b_T4a = [1, 1],
+                     Kp_h = 1, 
+                     Ti_h = 0.0, 
+                     Td_h = 0.0, 
+                     b_h = 1,
+                     Ruido = 0.005, 
+                     U_bias_T4a = 50, 
+                     U_bias_h = 0.5, 
+                     dt = 0.01):
+        
+            """
+            Parâmetros:
+            SYS: função do chuveiro turbinado com equações diferenciais a resolver.
+            y0: condições iniciais para as variáveis de estado h, T3, Tq e T4a.
+            TU: condições para as variáveis manipuladas (Sr, Sa, xq, xf, xs, Fd, Td, Tinf) em cada intervalo de tempo.
+            dt: tempo de cada passo na simulação.
+            
+            Retorna:
+            TT: tempo total com variação de dt em dt.
+            YY: h = YY[:,0], T4a = YY[:,-1], T3 = YY[:,1]
+            UU: Sr = UU[:,0], Sa = UU[:,1], xq = UU[:,2], xf = UU[:,3], xs = UU[:,4], Fd = UU[:,5], Td = UU[:,6], Tinf = UU[:,7]
+            """
+        
+            self.SYS = SYS
+            self.y0 = y0
+            self.TU = TU
+            self.Kp_T4a = Kp_T4a
+            self.Ti_T4a = Ti_T4a
+            self.Td_T4a = Td_T4a
+            self.b_T4a = b_T4a
+            self.Kp_h = Kp_h 
+            self.Ti_h = Ti_h 
+            self.Td_h = Td_h 
+            self.b_h = b_h
+            self.Ruido = Ruido 
+            self.U_bias_T4a = U_bias_T4a 
+            self.U_bias_h = U_bias_h 
+            self.dt = dt 
+
+    def solve_system(self):
+        
+        # Definição tempo final e condições iniciais da simulação:
+        Tfinal = self.TU[-1, 0] 
+
+        Yset_bias_T4a = [self.y0[-1], self.y0[1]]
+        Yset_bias_h = self.y0[0]
+
+        # Armazenamento dos dados resultantes da simulação:
+        TT = np.arange(start = 0, stop = Tfinal + self.dt, step = self.dt, dtype = 'float')
+        NT = np.size(TT)
+        NY = np.size(self.y0)
+        YY = np.zeros((NT, NY))
+        nu = np.size(self.TU, 1)
+        UU = np.zeros((NT, nu-1))
+        SP0_T4a = np.zeros_like(TT)
+        SP1_T4a = np.zeros_like(TT)
+        PV0_T4a = np.ones_like(TT) * Yset_bias_T4a[0]
+        PV1_T4a = np.ones_like(TT) * Yset_bias_T4a[1]
+        SP_h = np.zeros_like(TT)
+        PV_h = np.ones_like(TT) * Yset_bias_h
+        SP_Tq = np.zeros_like(TT)
+        Noise = np.random.normal(0, self.Ruido, len(TT))
+
+        YY[-1, 2] = self.y0[2]
+
+        ii = 0    
+
+        D_int0_T4a = 0.0  
+        I_int0_T4a = self.Kp_T4a[0] * Yset_bias_T4a[0] * (1 - self.b_T4a[0])
+
+        D_int1_T4a = 0.0  
+        I_int1_T4a = self.Kp_T4a[1] * Yset_bias_T4a[1] * (1 - self.b_T4a[1])
+
+        D_int_h = 0.0  
+        I_int_h = self.Kp_h * Yset_bias_h * (1 - self.b_h)
+
+        YY[0,:] = self.y0
+
+        onoff_initial = 50
+
+        for k in np.arange(NT - 1):
+
+            if TT[k] >= self.TU[ii + 1, 0]:
+                ii = ii + 1
+
+            # Definição do setpoint e do distúrbio na carga:
+            UU[k,:] = self.TU[ii, 1:nu]
+
+            SP0_T4a[k] = self.TU[ii, 1]
+
+            PV0_T4a[k] = YY[k, -1] + Noise[k]  
+            PV1_T4a[k] = YY[k, 1] + Noise[k]
+
+            SP_h[k] = self.TU[ii, 4]
+
+            PV_h[k] = YY[k, 0] + Noise[k]
+
+            SP_Tq[k] = self.TU[ii, 2]
+
+            # Armazenamento dos valores calculados:
+            #Malha nível
+            uu_h = PID_p2(SP_h, PV_h, k, I_int_h, D_int_h, self.dt, Method ='Backward',
+                          Kp = self.Kp_h, Ti = self.Ti_h, Td = self.Td_h, N = 10, b = self.b_h, 
+                          Umin = 0, Umax = 1, U_bias = self.U_bias_h)
+            Uop_h = uu_h[0]
+            I_int_h = uu_h[1]
+            D_int_h = uu_h[2]
+
+            # Malhas T4a:
+            # Malha externa (C1)
+            uu = PID_p2(SP0_T4a, PV0_T4a, k, I_int0_T4a, D_int0_T4a, self.dt, Method ='Backward',
+                        Kp = self.Kp_T4a[0], Ti = self.Ti_T4a[0], Td = self.Td_T4a[0], N = 10, b = self.b_T4a[0], 
+                        Umin = 0, Umax = 100, U_bias = Yset_bias_T4a[1])
+            SP1_T4a[k] = uu[0]
+            I_int0_T4a = uu[1]
+            D_int0_T4a = uu[2]
+            
+            # Malha interna (C2)
+            uu = PID_p2(SP1_T4a, PV1_T4a, k, I_int1_T4a, D_int1_T4a, self.dt, Method ='Backward',
+                        Kp = self.Kp_T4a[1], Ti = self.Ti_T4a[1], Td = self.Td_T4a[1], N = 10, b = self.b_T4a[1], 
+                        Umin = 0, Umax = 100, U_bias = self.U_bias_T4a)
+            Uop_T4a = uu[0]
+            I_int1_T4a = uu[1]
+            D_int1_T4a = uu[2]
+
+            #Malha Boiler
+            if k == 0:
+                Uop_Tq = onoff_initial
+            else:
+                Uop_Tq = self.ON_OFF(YY[k, 2], SP_Tq[k], banda_morta = 1.0)
+
+            # Definição do setpoint e do distúrbio na carga
+            UU[k, 0] = Uop_T4a
+            UU[k, 3] = Uop_h
+            UU[k, 1] = Uop_Tq
+
+            sol = solve_ivp(self.SYS, [TT[k], TT[k+1]], YY[k,:], args = tuple(UU[k,:]), rtol = 1e-6) #,method="RK45",max_step = dt, atol=1, rtol=1)
+
+            YY[k+1,:] = sol.y[:,-1]    
+
+        # erro = yy_f-YY
+        UU[k + 1,:] = self.TU[ii, 1:nu]
+        UU[k + 1,0] = Uop_T4a
+        SP0_T4a[k + 1] = self.TU[ii, 1]
+        SP1_T4a[k + 1] = SP1_T4a[k]
+
+        UU[k + 1,3] = Uop_h
+        SP_h[k + 1] = self.TU[ii, 4]
+
+        UU[k+1, 1] = Uop_Tq
+
+        # Resultados:
+        return (TT, YY, UU)
+
+    def ON_OFF(self, y_medido, y_sp, banda_morta = 0.1):
+
+        # Controlador liga e desliga boiler:
+        ONOFF = 50
+        if y_medido < (y_sp - banda_morta):
+            ONOFF = 100
+        if y_medido > (y_sp + banda_morta):
+            ONOFF = 0
+        else:
+            ONOFF = 50
+            
+        return ONOFF
+    
+    def compute_iqb(self, T4a, Fs):
+
+        # Índice de qualidade do banho:
+        # IQB = (1 / np.exp(1)) * np.exp(1 - ((T4a - 38 + 0.02 * (Fs ** 2)) / 2)) * np.power((0.506 + np.log10(np.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20)
+        IQB = (1 / math.e) * math.exp((1 - (T4a - 38 + 0.02 * Fs ** 2) / 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
 
         return IQB

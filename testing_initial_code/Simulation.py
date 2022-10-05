@@ -125,11 +125,12 @@ class ChuveiroTurbinadoSimulation():
                                      Ruido = 0.005, U_bias_T4a = 50, U_bias_h = 0.5, dt = 0.01)
         # TT = tempo, YY = variáveis de estado, UU = variáveis manipuladas
         self.TT, self.YY, self.UU = malha_fechada.solve_system()
-        
+
         # Valores finais das variáveis de estado (no tempo final):
         self.h = self.YY[:,0][-1]
         self.T4a = self.YY[:,-1][-1]
         self.T3 = self.YY[:,1][-1]
+        self.Tq = self.YY[:,2][-1]
         
         # Valores finais das variáveis manipuladas e distúrbios:
         self.Sr = self.UU[:,0][-1]
@@ -141,10 +142,48 @@ class ChuveiroTurbinadoSimulation():
         self.Td = self.UU[:,6][-1]
         self.Tinf = self.UU[:,7][-1]
     
-        # Falta calcular o custo do banho (levar em conta apenas energia elétrica ou o gás do boiler também?)
         # Cálculo do índice de qualidade do banho:
         self.Fs = (5 * self.xs ** 3 * np.sqrt(30) * np.sqrt(-15 * self.xs ** 6 + np.sqrt(6625 * self.xs ** 12 + 640 * self.xs ** 6 + 16)) / (20 * self.xs** 6 + 1))
         self.iqb = malha_fechada.compute_iqb(self.T4a, self.Fs)
+
+        # Custo do banho:
+        # Custo elétrico considerando 10 min de banho e utilizando o Sr final obtido a cada step: 
+        self.potencia_eletrica = 5.5 # potência média de um chuveiro é 5500 W = 5.5 KW
+        self.custo_kwh = 0.142
+        self.tempo_banho = 10 / 60
+        self.custo_eletrico = self.potencia_eletrica * (self.Sr / 100) * self.custo_kwh * self.tempo_banho
+
+        # Custo do gás considerando 10 min de banho, o volume de água que está no boiler, e a temperatura T3 do boiler:
+        # self.volume_boiler = 0.5 * self.h
+        # vazão é em L/min, 1L de água equivale a aproximadamente 1000g
+        # calcular quanto gás é necessário para aquecer a vazão (quantidade de litros que entra no tanque por minuto)
+        t1 = self.xq ** 0.2
+        t2 = t1 ** 2
+        t5 = self.xf ** 2 
+        t7 = self.xq ** 2 
+        t9 = t1 * self.xq * t7
+        t10 = t9 * t5
+        t14 = t7 ** 2 
+        t16 = t2 * t7 * t14 
+        t17 = t16 * t5 
+        t20 = np.sqrt(0.9e1 * t10 + 0.50e2 * t17) 
+        t26 = t5 ** 2
+        t38 = (np.sqrt(-0.1e1 * (-0.180e3 -0.45e2 * t5 -0.250e3 * t10 - 0.1180e4 * t9 + 0.60e2 * t20) / (0.6552e4 * t10 + 0.648e3 
+               * t5 + 0.16400e5* t17 + 0.900e3 * t9 * t26 + 0.2500e4 * t16 * t26 + 0.81e2 * t26 + 0.55696e5 * t16 + 0.16992e5 
+               * t9 + 0.1296e4)))
+        self.Fq = 60 * t1 * t2 * self.xq * t38
+
+        print(self.xq, self.Fq)
+
+        self.custo_botijao_kg = 49.19 / 13 # em reais/kg, considerando botijão de 13kg
+        self.calor_combustao_gas = 6000 # (kcal/kg)
+        self.c_agua = 1 # (cal/g)
+        self.Q = self.Fq * 1000 * self.c_agua * (self.Tq - self.Tinf) # volume em L equivale a kg então multiplica-se por 1000 para corrigir a unidade
+        self.quantidade_gas = (self.Q / 1000) / self.calor_combustao_gas
+        self.custo_gas_por_min = self.custo_botijao_kg * self.quantidade_gas
+        self.custo_gas = self.custo_gas_por_min * 10 # custo total de gás para banho de 10 min
+
+        print(self.custo_eletrico, self.custo_gas)
         
     # def episode_step(self, action: Schema) -> None:
     def episode_step(self, action) -> None:
@@ -202,14 +241,15 @@ def main():
     access_key = os.getenv('SIM_ACCESS_KEY')
 
     # values in `.env`, if they exist, take priority over environment variables
-    dotenv.load_dotenv('.env', override=True)
+    # dotenv.load_dotenv('.env', override=True)
 
-    if workspace is None:
-        raise ValueError('The Bonsai workspace ID is not set.')
-    if access_key is None:
-        raise ValueError('The access key for the Bonsai workspace is not set.')
+    # if workspace is None:
+    #      raise ValueError('The Bonsai workspace ID is not set.')
+    # if access_key is None:
+    #     raise ValueError('The access key for the Bonsai workspace is not set.')
 
-    config = BonsaiClientConfig(workspace=workspace, access_key=access_key)
+    # config = BonsaiClientConfig(workspace=workspace, access_key=access_key)
+    config = None
 
     chuveiro_sim = ChuveiroTurbinadoSimulation(config)
 
