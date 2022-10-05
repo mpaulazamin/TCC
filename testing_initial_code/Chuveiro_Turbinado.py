@@ -160,6 +160,44 @@ class MalhaAberta():
         IQB = (1 / math.e) * math.exp((1 - (T4a - 38 + 0.02 * Fs ** 2) / 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
     
         return IQB
+
+    def custo_banho(self, Sr, xq, xf, Tq, Tinf):
+
+        # Custo da parte elétrica considerando 10 min de banho e utilizando o Sr final obtido a cada step: 
+        potencia_eletrica = 5.5 # potência média de um chuveiro é 5500 W = 5.5 KW
+        custo_kwh = 0.142 # custo bandeira vermelha em POA
+        tempo_banho = 10 / 60 # em horas
+        custo_eletrico = potencia_eletrica * (Sr / 100) * custo_kwh * tempo_banho
+
+        # Custo do gás considerando 10 min de banho, o volume de água que está no boiler, e a temperatura T3 do boiler:
+        # self.volume_boiler = 0.5 * self.h
+        # vazão é em L/min, 1L de água equivale a aproximadamente 1000g
+        # calcular quanto gás é necessário para aquecer a vazão (quantidade de litros que entra no tanque por minuto)
+        t1 = xq ** 0.2
+        t2 = t1 ** 2
+        t5 = xf ** 2 
+        t7 = xq ** 2 
+        t9 = t1 * xq * t7
+        t10 = t9 * t5
+        t14 = t7 ** 2 
+        t16 = t2 * t7 * t14 
+        t17 = t16 * t5 
+        t20 = np.sqrt(0.9e1 * t10 + 0.50e2 * t17) 
+        t26 = t5 ** 2
+        t38 = (np.sqrt(-0.1e1 * (-0.180e3 -0.45e2 * t5 -0.250e3 * t10 - 0.1180e4 * t9 + 0.60e2 * t20) / (0.6552e4 * t10 + 0.648e3 
+               * t5 + 0.16400e5* t17 + 0.900e3 * t9 * t26 + 0.2500e4 * t16 * t26 + 0.81e2 * t26 + 0.55696e5 * t16 + 0.16992e5 
+               * t9 + 0.1296e4)))
+        Fq = 60 * t1 * t2 * xq * t38
+
+        custo_botijao_kg = 49.19 / 13 # em reais/kg, considerando botijão de 13kg
+        calor_combustao_gas = 6000 # (kcal/kg)
+        c_agua = 1 # (cal/g)
+        Q = Fq * 1000 * c_agua * (Tq - Tinf) # volume em L equivale a kg então multiplica-se por 1000 para corrigir a unidade
+        quantidade_gas = (Q / 1000) / calor_combustao_gas
+        custo_gas_por_min = custo_botijao_kg * quantidade_gas
+        custo_gas = custo_gas_por_min * 10 # custo total de gás para banho de 10 min
+
+        return custo_eletrico, custo_gas
     
 def PID_p2(SP, 
            PV, 
@@ -394,54 +432,92 @@ class MalhaFechada():
 
         return IQB
 
+    def custo_banho(self, Sr, xq, xf, Tq, Tinf):
 
-    class MalhaFechadaControladorBoiler():
+        # Custo da parte elétrica considerando 10 min de banho e utilizando o Sr final obtido a cada step: 
+        potencia_eletrica = 5.5 # potência média de um chuveiro é 5500 W = 5.5 KW
+        custo_kwh = 0.142 # custo bandeira vermelha em POA
+        tempo_banho = 10 / 60 # em horas
+        custo_eletrico = potencia_eletrica * (Sr / 100) * custo_kwh * tempo_banho
 
-        def __init__(self,
-                     SYS,
-                     y0,
-                     TU,
-                     Kp_T4a = [0.5, 0.5],
-                     Ti_T4a = [0.5, 1e6],
-                     Td_T4a = [0, 0],
-                     b_T4a = [1, 1],
-                     Kp_h = 1, 
-                     Ti_h = 0.0, 
-                     Td_h = 0.0, 
-                     b_h = 1,
-                     Ruido = 0.005, 
-                     U_bias_T4a = 50, 
-                     U_bias_h = 0.5, 
-                     dt = 0.01):
+        # Custo do gás considerando 10 min de banho, o volume de água que está no boiler, e a temperatura T3 do boiler:
+        # self.volume_boiler = 0.5 * self.h
+        # vazão é em L/min, 1L de água equivale a aproximadamente 1000g
+        # calcular quanto gás é necessário para aquecer a vazão (quantidade de litros que entra no tanque por minuto)
+        t1 = xq ** 0.2
+        t2 = t1 ** 2
+        t5 = xf ** 2 
+        t7 = xq ** 2 
+        t9 = t1 * xq * t7
+        t10 = t9 * t5
+        t14 = t7 ** 2 
+        t16 = t2 * t7 * t14 
+        t17 = t16 * t5 
+        t20 = np.sqrt(0.9e1 * t10 + 0.50e2 * t17) 
+        t26 = t5 ** 2
+        t38 = (np.sqrt(-0.1e1 * (-0.180e3 -0.45e2 * t5 -0.250e3 * t10 - 0.1180e4 * t9 + 0.60e2 * t20) / (0.6552e4 * t10 + 0.648e3 
+               * t5 + 0.16400e5* t17 + 0.900e3 * t9 * t26 + 0.2500e4 * t16 * t26 + 0.81e2 * t26 + 0.55696e5 * t16 + 0.16992e5 
+               * t9 + 0.1296e4)))
+        Fq = 60 * t1 * t2 * xq * t38
+
+        custo_botijao_kg = 49.19 / 13 # em reais/kg, considerando botijão de 13kg
+        calor_combustao_gas = 6000 # (kcal/kg)
+        c_agua = 1 # (cal/g)
+        Q = Fq * 1000 * c_agua * (Tq - Tinf) # volume em L equivale a kg então multiplica-se por 1000 para corrigir a unidade
+        quantidade_gas = (Q / 1000) / calor_combustao_gas
+        custo_gas_por_min = custo_botijao_kg * quantidade_gas
+        custo_gas = custo_gas_por_min * 10 # custo total de gás para banho de 10 min
+
+        return custo_eletrico, custo_gas
+
+
+class MalhaFechadaControladorBoiler():
+
+    def __init__(self,
+                    SYS,
+                    y0,
+                    TU,
+                    Kp_T4a = [0.5, 0.5],
+                    Ti_T4a = [0.5, 1e6],
+                    Td_T4a = [0, 0],
+                    b_T4a = [1, 1],
+                    Kp_h = 1, 
+                    Ti_h = 0.0, 
+                    Td_h = 0.0, 
+                    b_h = 1,
+                    Ruido = 0.005, 
+                    U_bias_T4a = 50, 
+                    U_bias_h = 0.5, 
+                    dt = 0.01):
+    
+        """
+        Parâmetros:
+        SYS: função do chuveiro turbinado com equações diferenciais a resolver.
+        y0: condições iniciais para as variáveis de estado h, T3, Tq e T4a.
+        TU: condições para as variáveis manipuladas (Sr, Sa, xq, xf, xs, Fd, Td, Tinf) em cada intervalo de tempo.
+        dt: tempo de cada passo na simulação.
         
-            """
-            Parâmetros:
-            SYS: função do chuveiro turbinado com equações diferenciais a resolver.
-            y0: condições iniciais para as variáveis de estado h, T3, Tq e T4a.
-            TU: condições para as variáveis manipuladas (Sr, Sa, xq, xf, xs, Fd, Td, Tinf) em cada intervalo de tempo.
-            dt: tempo de cada passo na simulação.
-            
-            Retorna:
-            TT: tempo total com variação de dt em dt.
-            YY: h = YY[:,0], T4a = YY[:,-1], T3 = YY[:,1]
-            UU: Sr = UU[:,0], Sa = UU[:,1], xq = UU[:,2], xf = UU[:,3], xs = UU[:,4], Fd = UU[:,5], Td = UU[:,6], Tinf = UU[:,7]
-            """
-        
-            self.SYS = SYS
-            self.y0 = y0
-            self.TU = TU
-            self.Kp_T4a = Kp_T4a
-            self.Ti_T4a = Ti_T4a
-            self.Td_T4a = Td_T4a
-            self.b_T4a = b_T4a
-            self.Kp_h = Kp_h 
-            self.Ti_h = Ti_h 
-            self.Td_h = Td_h 
-            self.b_h = b_h
-            self.Ruido = Ruido 
-            self.U_bias_T4a = U_bias_T4a 
-            self.U_bias_h = U_bias_h 
-            self.dt = dt 
+        Retorna:
+        TT: tempo total com variação de dt em dt.
+        YY: h = YY[:,0], T4a = YY[:,-1], T3 = YY[:,1]
+        UU: Sr = UU[:,0], Sa = UU[:,1], xq = UU[:,2], xf = UU[:,3], xs = UU[:,4], Fd = UU[:,5], Td = UU[:,6], Tinf = UU[:,7]
+        """
+    
+        self.SYS = SYS
+        self.y0 = y0
+        self.TU = TU
+        self.Kp_T4a = Kp_T4a
+        self.Ti_T4a = Ti_T4a
+        self.Td_T4a = Td_T4a
+        self.b_T4a = b_T4a
+        self.Kp_h = Kp_h 
+        self.Ti_h = Ti_h 
+        self.Td_h = Td_h 
+        self.b_h = b_h
+        self.Ruido = Ruido 
+        self.U_bias_T4a = U_bias_T4a 
+        self.U_bias_h = U_bias_h 
+        self.dt = dt 
 
     def solve_system(self):
         
@@ -506,8 +582,8 @@ class MalhaFechada():
             # Armazenamento dos valores calculados:
             #Malha nível
             uu_h = PID_p2(SP_h, PV_h, k, I_int_h, D_int_h, self.dt, Method ='Backward',
-                          Kp = self.Kp_h, Ti = self.Ti_h, Td = self.Td_h, N = 10, b = self.b_h, 
-                          Umin = 0, Umax = 1, U_bias = self.U_bias_h)
+                            Kp = self.Kp_h, Ti = self.Ti_h, Td = self.Td_h, N = 10, b = self.b_h, 
+                            Umin = 0, Umax = 1, U_bias = self.U_bias_h)
             Uop_h = uu_h[0]
             I_int_h = uu_h[1]
             D_int_h = uu_h[2]
@@ -570,7 +646,7 @@ class MalhaFechada():
             ONOFF = 50
             
         return ONOFF
-    
+
     def compute_iqb(self, T4a, Fs):
 
         # Índice de qualidade do banho:
@@ -578,3 +654,41 @@ class MalhaFechada():
         IQB = (1 / math.e) * math.exp((1 - (T4a - 38 + 0.02 * Fs ** 2) / 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
 
         return IQB
+
+    def custo_banho(self, Sr, xq, xf, Tq, Tinf):
+
+        # Custo da parte elétrica considerando 10 min de banho e utilizando o Sr final obtido a cada step: 
+        potencia_eletrica = 5.5 # potência média de um chuveiro é 5500 W = 5.5 KW
+        custo_kwh = 0.142 # custo bandeira vermelha em POA
+        tempo_banho = 10 / 60 # em horas
+        custo_eletrico = potencia_eletrica * (Sr / 100) * custo_kwh * tempo_banho
+
+        # Custo do gás considerando 10 min de banho, o volume de água que está no boiler, e a temperatura T3 do boiler:
+        # self.volume_boiler = 0.5 * self.h
+        # vazão é em L/min, 1L de água equivale a aproximadamente 1000g
+        # calcular quanto gás é necessário para aquecer a vazão (quantidade de litros que entra no tanque por minuto)
+        t1 = xq ** 0.2
+        t2 = t1 ** 2
+        t5 = xf ** 2 
+        t7 = xq ** 2 
+        t9 = t1 * xq * t7
+        t10 = t9 * t5
+        t14 = t7 ** 2 
+        t16 = t2 * t7 * t14 
+        t17 = t16 * t5 
+        t20 = np.sqrt(0.9e1 * t10 + 0.50e2 * t17) 
+        t26 = t5 ** 2
+        t38 = (np.sqrt(-0.1e1 * (-0.180e3 -0.45e2 * t5 -0.250e3 * t10 - 0.1180e4 * t9 + 0.60e2 * t20) / (0.6552e4 * t10 + 0.648e3 
+                * t5 + 0.16400e5* t17 + 0.900e3 * t9 * t26 + 0.2500e4 * t16 * t26 + 0.81e2 * t26 + 0.55696e5 * t16 + 0.16992e5 
+                * t9 + 0.1296e4)))
+        Fq = 60 * t1 * t2 * xq * t38
+
+        custo_botijao_kg = 49.19 / 13 # em reais/kg, considerando botijão de 13kg
+        calor_combustao_gas = 6000 # (kcal/kg)
+        c_agua = 1 # (cal/g)
+        Q = Fq * 1000 * c_agua * (Tq - Tinf) # volume em L equivale a kg então multiplica-se por 1000 para corrigir a unidade
+        quantidade_gas = (Q / 1000) / calor_combustao_gas
+        custo_gas_por_min = custo_botijao_kg * quantidade_gas
+        custo_gas = custo_gas_por_min * 10 # custo total de gás para banho de 10 min
+
+        return custo_eletrico, custo_gas
