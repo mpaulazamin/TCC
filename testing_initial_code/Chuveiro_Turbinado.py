@@ -192,10 +192,10 @@ class MalhaAberta():
         custo_botijao_kg = 49.19 / 13 # em reais/kg, considerando botijão de 13kg
         calor_combustao_gas = 6000 # (kcal/kg)
         c_agua = 1 # (cal/g)
-        Q = Fq * 1000 * c_agua * (Tq - Tinf) # volume em L equivale a kg então multiplica-se por 1000 para corrigir a unidade
+        volume = Fq * 10
+        Q = volume * 1000 * c_agua * (Tq - Tinf) # volume em L equivale a kg então multiplica-se por 1000 para corrigir a unidade
         quantidade_gas = (Q / 1000) / calor_combustao_gas
-        custo_gas_por_min = custo_botijao_kg * quantidade_gas
-        custo_gas = custo_gas_por_min * 10 # custo total de gás para banho de 10 min
+        custo_gas = custo_botijao_kg * quantidade_gas # custo total de gás para banho de 10 min
 
         return custo_eletrico, custo_gas
     
@@ -463,10 +463,10 @@ class MalhaFechada():
         custo_botijao_kg = 49.19 / 13 # em reais/kg, considerando botijão de 13kg
         calor_combustao_gas = 6000 # (kcal/kg)
         c_agua = 1 # (cal/g)
-        Q = Fq * 1000 * c_agua * (Tq - Tinf) # volume em L equivale a kg então multiplica-se por 1000 para corrigir a unidade
+        volume = Fq * 10
+        Q = volume * 1000 * c_agua * (Tq - Tinf) # volume em L equivale a kg então multiplica-se por 1000 para corrigir a unidade
         quantidade_gas = (Q / 1000) / calor_combustao_gas
-        custo_gas_por_min = custo_botijao_kg * quantidade_gas
-        custo_gas = custo_gas_por_min * 10 # custo total de gás para banho de 10 min
+        custo_gas = custo_botijao_kg * quantidade_gas # custo total de gás para banho de 10 min
 
         return custo_eletrico, custo_gas
 
@@ -686,9 +686,9 @@ class MalhaFechadaControladorBoiler():
         custo_botijao_kg = 49.19 / 13 # em reais/kg, considerando botijão de 13kg
         calor_combustao_gas = 6000 # (kcal/kg)
         c_agua = 1 # (cal/g)
-        Q = Fq * 1000 * c_agua * (Tq - Tinf) # volume em L equivale a kg então multiplica-se por 1000 para corrigir a unidade
+        volume = Fq * 10
+        Q = volume * 1000 * c_agua * (Tq - Tinf) # volume em L equivale a kg então multiplica-se por 1000 para corrigir a unidade
         quantidade_gas = (Q / 1000) / calor_combustao_gas
-        custo_gas_por_min = custo_botijao_kg * quantidade_gas
-        custo_gas = custo_gas_por_min * 10 # custo total de gás para banho de 10 min
+        custo_gas = custo_botijao_kg * quantidade_gas # custo total de gás para banho de 10 min
 
         return custo_eletrico, custo_gas
