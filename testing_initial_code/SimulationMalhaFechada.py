@@ -4,6 +4,7 @@ import random
 import numpy as np
 import copy
 import time as tm
+import matplotlib.pyplot as plt
 
 #from bonsai_common import SimulatorSession, Schema
 #import dotenv
@@ -164,7 +165,7 @@ class ChuveiroTurbinadoSimulation():
         print(self.TU)
         print(self.T0)
         print(self.time)
-        # print(self.TU_list)
+        print(self.TU_list)
 
         # Simulação malha fechada com controladores PID no nível do tanque h e na temperatura final T4a: 
         malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU, Kp_T4a = [20.63, 1], Ti_T4a = [1.53, 1e6], 
@@ -305,6 +306,9 @@ def main_test():
     chuveiro_sim = ChuveiroTurbinadoSimulation()
     chuveiro_sim.reset()
     state = chuveiro_sim.get_state()
+
+    q_list = []
+    T4_list = []
     
        #Time,  SP(T4a),   Sa,    xq,  SP(h),      Xs,   Fd,  Td,  Tinf
     TU=[[ 4,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
@@ -338,6 +342,15 @@ def main_test():
         state = chuveiro_sim.get_state()
         print('')
         print(state)
+        q_list.append(state['quality_of_shower'])
+        T4_list.append(state['final_temperature'])
+
+    plt.figure(figsize=(10,7))
+    plt.subplot(2,1,1)
+    plt.plot([i for i in range(len(q_list))], q_list)
+    plt.subplot(2,1,2)
+    plt.plot([i for i in range(len(T4_list))], T4_list)
+    plt.show()
     
 if __name__ == "__main__":
     main_test()
