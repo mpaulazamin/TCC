@@ -2,6 +2,8 @@ import json
 import os
 import random
 import numpy as np
+import copy
+import time as tm
 
 #from bonsai_common import SimulatorSession, Schema
 #import dotenv
@@ -57,7 +59,9 @@ class ChuveiroTurbinadoSimulation():
         self.SPh = SPh_0
         self.SPT4a = SPT4a_0
         
-        self.time = 1
+        self.time = 2
+        self.dt = 0.01
+        self.time_sample = 2 #minutos
         
         # Definindo TU:
         # Time, SP(T4a), Sa, xq, SP(h), xs, Fd, Td, Tinf
@@ -70,7 +74,7 @@ class ChuveiroTurbinadoSimulation():
         # Simulação malha fechada com controladores PID no nível do tanque h e na temperatura final T4a: 
         malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, TU, Kp_T4a = [20.63, 1], Ti_T4a = [1.53, 1e6], 
                                      Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
-                                     Ruido = 0.005, U_bias_T4a = 50, U_bias_h = 0.5, dt = 0.01)
+                                     Ruido = 0.005, U_bias_T4a = 50, U_bias_h = 0.5, dt = self.dt)
         # TT = tempo, YY = variáveis de estado, UU = variáveis manipuladas
         self.TT, self.YY, self.UU = malha_fechada.solve_system()
         
@@ -91,13 +95,32 @@ class ChuveiroTurbinadoSimulation():
         self.Tinf = self.UU[:,7][-1]
     
         # Cálculo do índice de qualidade do banho:
-        self.Fs = (5 * self.xs ** 3 * np.sqrt(30) * np.sqrt(-15 * self.xs ** 6 + np.sqrt(6625 * self.xs ** 12 + 640 * self.xs ** 6 + 16)) / (20 * self.xs** 6 + 1))
-        self.iqb = malha_fechada.compute_iqb(self.T4a, self.Fs)
+        self.iqb = malha_fechada.compute_iqb(self.YY[:,-1], # T4a
+                                             self.UU[:,4], # xs
+                                             self.TT)
 
         # Cálculo do custo do banho:
-        self.custo_eletrico, self.custo_gas = malha_fechada.custo_banho(self.Sr, self.xq, self.xf, self.Tq, self.Tinf)
+        self.custo_eletrico, self.custo_gas = malha_fechada.custo_banho(self.UU[:,0], # Sr
+                                                                        self.UU[:,2], # xq
+                                                                        self.UU[:,3], # xf
+                                                                        self.YY[:,2], # Tq
+                                                                        self.UU[:,7], # Tinf
+                                                                        self.TT,
+                                                                        self.dt)
+
+        # Cálculo do custo da água:
+        self.custo_agua = malha_fechada.custo_agua(self.UU[:,4], #xs
+                                                   self.TT)
+
+        # Vazão final Fs:
+        self.Fs = (5 * self.xs ** 3 * np.sqrt(30) * np.sqrt(-15 * self.xs ** 6 + np.sqrt(6625 * self.xs ** 12 + 640 * self.xs ** 6 + 16)) / (20 * self.xs** 6 + 1))
 
         self.TU = TU
+        self.TU_list = copy.deepcopy(TU)
+
+        # Salvar o estado atual
+        self.last_TU = copy.deepcopy(np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]))
+        self.last_T0 = copy.deepcopy([self.h, self.T3, 30, self.T4a])
 
     # def episode_start(self, config: Schema) -> None:
     def episode_start(self, config) -> None:
@@ -118,14 +141,31 @@ class ChuveiroTurbinadoSimulation():
         
     def step(self):
         
-        self.time += 10
+        self.time += self.time_sample 
         
-        self.TU = np.append(self.TU, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
+        # if self.time >= self.time_sample *2 + 1: #2
+        #     self.TU = np.append(self.last_TU, np.array([[self.time_sample, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
+        #     self.T0 = self.last_T0 # h, T3, Tq, T4a
+        #     print(self.TU)
+        #     print(self.time)
+        # else:
+        #     self.TU = np.append(self.TU, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
+        #     print(self.TU)
+
+        # self.TU_list = np.append(self.TU_list, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
+        # print("TU List: ", self.TU_list)
+
+        self.TU = np.append(self.last_TU, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
+        self.T0 = self.last_T0 # h, T3, Tq, T4a
+        self.TU_list = np.append(self.TU_list, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
+        # print(self.TU)
+        # print(self.T0)
+        # print(self.TU_list)
 
         # Simulação malha fechada com controladores PID no nível do tanque h e na temperatura final T4a: 
         malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU, Kp_T4a = [20.63, 1], Ti_T4a = [1.53, 1e6], 
                                      Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
-                                     Ruido = 0.005, U_bias_T4a = 50, U_bias_h = 0.5, dt = 0.01)
+                                     Ruido = 0.005, U_bias_T4a = 50, U_bias_h = 0.5, dt = self.dt)
         # TT = tempo, YY = variáveis de estado, UU = variáveis manipuladas
         self.TT, self.YY, self.UU = malha_fechada.solve_system()
 
@@ -146,14 +186,30 @@ class ChuveiroTurbinadoSimulation():
         self.Tinf = self.UU[:,7][-1]
     
         # Cálculo do índice de qualidade do banho:
-        self.Fs = (5 * self.xs ** 3 * np.sqrt(30) * np.sqrt(-15 * self.xs ** 6 + np.sqrt(6625 * self.xs ** 12 + 640 * self.xs ** 6 + 16)) / (20 * self.xs** 6 + 1))
-        self.iqb = malha_fechada.compute_iqb(self.T4a, self.Fs)
+        self.iqb = malha_fechada.compute_iqb(self.YY[:,-1], # T4a
+                                             self.UU[:,4], # xs
+                                             self.TT)
 
         # Cálculo do custo do banho:
-        self.custo_eletrico, self.custo_gas = malha_fechada.custo_banho(self.Sr, self.xq, self.xf, self.Tq, self.Tinf)
+        self.custo_eletrico, self.custo_gas = malha_fechada.custo_banho(self.UU[:,0], # Sr
+                                                                        self.UU[:,2], # xq
+                                                                        self.UU[:,3], # xf
+                                                                        self.YY[:,2], # Tq
+                                                                        self.UU[:,7], # Tinf
+                                                                        self.TT,
+                                                                        self.dt)
 
-        # Calcular quanta água está sendo gasta para também utilizar como indicador?
+        # Cálculo do custo da água:
+        self.custo_agua = malha_fechada.custo_agua(self.UU[:,4], #xs
+                                                   self.TT)
+
+        # Vazão final Fs:
+        self.Fs = (5 * self.xs ** 3 * np.sqrt(30) * np.sqrt(-15 * self.xs ** 6 + np.sqrt(6625 * self.xs ** 12 + 640 * self.xs ** 6 + 16)) / (20 * self.xs** 6 + 1))
                 
+        # Salvar o estado atual
+        self.last_TU = copy.deepcopy(np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]))
+        self.last_T0 = copy.deepcopy([self.h, self.T3, 30, self.T4a])
+
     # def episode_step(self, action: Schema) -> None:
     def episode_step(self, action) -> None:
         
@@ -161,6 +217,10 @@ class ChuveiroTurbinadoSimulation():
         self.xs = action.get('out_valve_opening')
         self.SPT4a = action.get('setpoint_final_temperature')
         self.Sa = action.get('gas_boiler_fraction')
+        self.Sph = action.get('setpoint_tank_level')
+        self.Fd = action.get('disturbance_current_flow')
+        self.Td = action.get('disturbance_temperature')
+        self.Tinf = action.get('room_temperature')
 
         self.step()
 
@@ -179,11 +239,13 @@ class ChuveiroTurbinadoSimulation():
             'tank_level': self.h,
             'setpoint_final_temperature': self.SPT4a,
             'final_temperature': self.T4a,
+            'flow_out': self.Fs,
             'final_boiler_temperature': self.Tq,
             'final_temperature_tank': self.T3,
             'quality_of_shower': self.iqb,
             'electrical_cost_shower': self.custo_eletrico,
-            'gas_cost_shower': self.custo_gas 
+            'gas_cost_shower': self.custo_gas,
+            'cost_water': self.custo_agua,
         }
     
     def halted(self) -> bool:
@@ -238,16 +300,16 @@ def main_test():
     state = chuveiro_sim.get_state()
     
        #Time,  SP(T4a),   Sa,    xq,  SP(h),      Xs,   Fd,  Td,  Tinf
-    TU=[[ 10,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
-        [ 20,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [ 30,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [ 40,       38,   50,   0.3,     70,   0.4672,   1,  25,   25],
-        [ 50,       38,   50,   0.3,     70,   0.4672,   1,  25,   25],
-        [ 60,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
-        [ 70,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
-        [ 80,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
-        [ 90,       38,   50,   0.3,     70,   0.4672,   1,  28,   20],
-        [100,       38,   50,   0.3,     70,   0.4672,   1,  28,   20]]   
+    TU=[[ 4,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [ 6,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [ 8,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [10,       38,   50,   0.3,     70,   0.4672,   1,  25,   25],
+        [12,       38,   50,   0.3,     70,   0.4672,   1,  25,   25],
+        [14,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
+        [16,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
+        [18,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
+        [20,       38,   50,   0.3,     70,   0.4672,   1,  28,   20],
+        [22,       38,   50,   0.3,     70,   0.4672,   1,  28,   20]]   
     
     for i in range(0, 10):
         
@@ -258,11 +320,16 @@ def main_test():
             'hot_valve_opening': TU[i][3],
             'out_valve_opening': TU[i][-4],
             'setpoint_final_temperature': TU[i][1],
-            'gas_boiler_fraction': TU[i][2]
+            'gas_boiler_fraction': TU[i][2],
+            'setpoint_tank_level': TU[i][4],
+            'disturbance_current_flow': TU[i][6],
+            'disturbance_temperature': TU[i][7],
+            'room_temperature': TU[i][8],
         }
             
         chuveiro_sim.episode_step(action)
         state = chuveiro_sim.get_state()
+        print('')
         print(state)
     
 if __name__ == "__main__":

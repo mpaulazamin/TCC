@@ -85,11 +85,18 @@ class ChuveiroTurbinadoSimulation():
         self.Tinf = self.UU[:,7][-1]
     
         # Cálculo do índice de qualidade do banho:
-        self.Fs = (5 * self.xs ** 3 * np.sqrt(30) * np.sqrt(-15 * self.xs ** 6 + np.sqrt(6625 * self.xs ** 12 + 640 * self.xs ** 6 + 16)) / (20 * self.xs** 6 + 1))
-        self.iqb = malha_aberta.compute_iqb(self.T4a, self.Fs)
+        self.iqb = malha_aberta.compute_iqb(self.YY[:,-1], # T4a
+                                             self.UU[:,4], # xs
+                                             self.TT)
 
         # Cálculo do custo do banho:
-        self.custo_eletrico, self.custo_gas = malha_aberta.custo_banho(self.Sr, self.xq, self.xf, self.Tq, self.Tinf)
+        self.custo_eletrico, self.custo_gas = malha_aberta.custo_banho(self.UU[:,0], # Sr
+                                                                        self.UU[:,2], # xq
+                                                                        self.UU[:,3], # xf
+                                                                        self.YY[:,2], # Tq
+                                                                        self.UU[:,7], # Tinf
+                                                                        self.TT,
+                                                                        self.dt)
 
         self.TU = TU
 
@@ -136,11 +143,18 @@ class ChuveiroTurbinadoSimulation():
         self.Tinf = self.UU[:,7][-1]
     
         # Cálculo do índice de qualidade do banho:
-        self.Fs = (5 * self.xs ** 3 * np.sqrt(30) * np.sqrt(-15 * self.xs ** 6 + np.sqrt(6625 * self.xs ** 12 + 640 * self.xs ** 6 + 16)) / (20 * self.xs** 6 + 1))
-        self.iqb = malha_aberta.compute_iqb(self.T4a, self.Fs)
+        self.iqb = malha_aberta.compute_iqb(self.YY[:,-1], # T4a
+                                             self.UU[:,4], # xs
+                                             self.TT)
 
         # Cálculo do custo do banho:
-        self.custo_eletrico, self.custo_gas = malha_aberta.custo_banho(self.Sr, self.xq, self.xf, self.Tq, self.Tinf)
+        self.custo_eletrico, self.custo_gas = malha_aberta.custo_banho(self.UU[:,0], # Sr
+                                                                        self.UU[:,2], # xq
+                                                                        self.UU[:,3], # xf
+                                                                        self.YY[:,2], # Tq
+                                                                        self.UU[:,7], # Tinf
+                                                                        self.TT,
+                                                                        self.dt)
         
     # def episode_step(self, action: Schema) -> None:
     def episode_step(self, action) -> None:
