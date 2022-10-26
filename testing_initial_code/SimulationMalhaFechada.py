@@ -159,6 +159,8 @@ class ChuveiroTurbinadoSimulation():
         # self.TU_list = np.append(self.TU_list, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
         # print("TU List: ", self.TU_list)
 
+        print(self.SPh)
+        print('')
         self.TU = np.append(self.last_TU, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
         self.T0 = self.last_T0 # h, T3, Tq, T4a
         self.TU_list = np.append(self.TU_list, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
@@ -225,7 +227,7 @@ class ChuveiroTurbinadoSimulation():
         self.xs = action.get('out_valve_opening')
         self.SPT4a = action.get('setpoint_final_temperature')
         self.Sa = action.get('gas_boiler_fraction')
-        self.Sph = action.get('setpoint_tank_level')
+        self.SPh = action.get('setpoint_tank_level')
         self.Fd = action.get('disturbance_current_flow')
         self.Td = action.get('disturbance_temperature')
         self.Tinf = action.get('room_temperature')
@@ -309,18 +311,19 @@ def main_test():
 
     q_list = []
     T4_list = []
+    h_list = []
     
        #Time,  SP(T4a),   Sa,    xq,  SP(h),      Xs,   Fd,  Td,  Tinf
-    TU=[[ 4,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+    TU=[[ 4,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
         [ 6,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
         [ 8,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [10,       38,   50,   0.3,     70,   0.4672,   1,  25,   25],
-        [12,       38,   50,   0.3,     70,   0.4672,   1,  25,   25],
-        [14,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
-        [16,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
-        [18,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
-        [20,       38,   50,   0.3,     70,   0.4672,   1,  28,   20],
-        [22,       38,   50,   0.3,     70,   0.4672,   1,  28,   20]]   
+        [10,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [12,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [14,       48,   50,   0.3,     70,   0.4672,   0,  28,   25],
+        [16,       48,   50,   0.3,     70,   0.4672,   0,  28,   25],
+        [18,       48,   50,   0.3,     70,   0.4672,   0,  28,   25],
+        [20,       48,   50,   0.3,     70,   0.4672,   0,  28,   25],
+        [22,       48,   50,   0.3,     70,   0.4672,   0,  28,   25]]   
     
     for i in range(0, 10):
         
@@ -344,12 +347,15 @@ def main_test():
         print(state)
         q_list.append(state['quality_of_shower'])
         T4_list.append(state['final_temperature'])
+        h_list.append(state['tank_level'])
 
     plt.figure(figsize=(10,7))
-    plt.subplot(2,1,1)
+    plt.subplot(3,1,1)
     plt.plot([i for i in range(len(q_list))], q_list)
-    plt.subplot(2,1,2)
+    plt.subplot(3,1,2)
     plt.plot([i for i in range(len(T4_list))], T4_list)
+    plt.subplot(3,1,3)
+    plt.plot([i for i in range(len(h_list))], h_list)
     plt.show()
     
 if __name__ == "__main__":
