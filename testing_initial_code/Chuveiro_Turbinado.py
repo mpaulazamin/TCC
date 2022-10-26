@@ -161,7 +161,7 @@ class MalhaAberta():
 
         for i in range(0, len(TT_all)):
 
-            Fs = (5 * self.xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * self.xs_all[i] ** 6 + np.sqrt(6625 * self.xs_all[i] ** 12 + 640 * self.xs_all[i] ** 6 + 16)) / (20 * self.xs_all[i] ** 6 + 1))
+            Fs = (5 * xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_all[i] ** 6 + np.sqrt(6625 * xs_all[i] ** 12 + 640 * xs_all[i] ** 6 + 16)) / (20 * xs_all[i] ** 6 + 1))
             IQB = (1 / math.e) * math.exp((1 - (T4a_all[i] - 38 + 0.02 * Fs ** 2) / 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
             IQB_total = np.append(IQB_total, IQB)
 
@@ -212,7 +212,7 @@ class MalhaAberta():
             Fq = 60 * t1 * t2 * xq_all[i] * t38
 
             # Calculando volume do boiler a cada dt:
-            volume = Fq * dt
+            volume = Fq * (dt / 60) # Fq é em L/min e dt em segundos
 
             # Quantidade de gás necessária para esquentar o volume do boiler a cada dt:
             Q = (volume * 1000) * calor_especifico_agua * (Tq_all[i] - Tinf_all[i])
@@ -224,7 +224,7 @@ class MalhaAberta():
 
         return custo_eletrico_total, custo_gas_total
 
-    def custo_agua(self, xs_all, TT_all):
+    def custo_agua(self, xs_all, TT_all, dt):
 
         custo_agua_por_m3 = 4.63 # em reais, em POA
 
@@ -232,7 +232,7 @@ class MalhaAberta():
 
         for i in range(0, len(TT_all)):
             Fs = (5 * xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_all[i] ** 6 + np.sqrt(6625 * xs_all[i] ** 12 + 640 * xs_all[i] ** 6 + 16)) / (20 * xs_all[i] ** 6 + 1))
-            custo_agua_por_dt = np.append(custo_agua_por_dt, ((Fs / (1000 * 60)) * custo_agua_por_m3))
+            custo_agua_por_dt = np.append(custo_agua_por_dt, ((Fs * dt / (1000 * 60)) * custo_agua_por_m3))
 
         # print(custo_agua_por_dt)
         custo_agua_total = np.sum(custo_agua_por_dt)
@@ -523,7 +523,7 @@ class MalhaFechada():
             Fq = 60 * t1 * t2 * xq_all[i] * t38
 
             # Calculando volume do boiler a cada dt:
-            volume = Fq * dt
+            volume = Fq * (dt / 60) # Fq é em L/min e dt em segundos
 
             # Quantidade de gás necessária para esquentar o volume do boiler a cada dt:
             Q = (volume * 1000) * calor_especifico_agua * (Tq_all[i] - Tinf_all[i])
@@ -535,7 +535,7 @@ class MalhaFechada():
 
         return custo_eletrico_total, custo_gas_total
 
-    def custo_agua(self, xs_all, TT_all):
+    def custo_agua(self, xs_all, TT_all, dt):
 
         custo_agua_por_m3 = 4.63 # em reais, em POA
 
@@ -543,13 +543,12 @@ class MalhaFechada():
 
         for i in range(0, len(TT_all)):
             Fs = (5 * xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_all[i] ** 6 + np.sqrt(6625 * xs_all[i] ** 12 + 640 * xs_all[i] ** 6 + 16)) / (20 * xs_all[i] ** 6 + 1))
-            custo_agua_por_dt = np.append(custo_agua_por_dt, ((Fs / (1000 * 60)) * custo_agua_por_m3))
+            custo_agua_por_dt = np.append(custo_agua_por_dt, ((Fs * dt / (1000 * 60)) * custo_agua_por_m3))
 
         # print(custo_agua_por_dt)
         custo_agua_total = np.sum(custo_agua_por_dt)
 
         return custo_agua_total
-
 class MalhaFechadaControladorBoiler():
 
     def __init__(self,
@@ -734,7 +733,7 @@ class MalhaFechadaControladorBoiler():
 
         for i in range(0, len(TT_all)):
 
-            Fs = (5 * self.xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * self.xs_all[i] ** 6 + np.sqrt(6625 * self.xs_all[i] ** 12 + 640 * self.xs_all[i] ** 6 + 16)) / (20 * self.xs_all[i] ** 6 + 1))
+            Fs = (5 * xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_all[i] ** 6 + np.sqrt(6625 * xs_all[i] ** 12 + 640 * xs_all[i] ** 6 + 16)) / (20 * xs_all[i] ** 6 + 1))
             IQB = (1 / math.e) * math.exp((1 - (T4a_all[i] - 38 + 0.02 * Fs ** 2) / 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
             IQB_total = np.append(IQB_total, IQB)
 
@@ -785,7 +784,7 @@ class MalhaFechadaControladorBoiler():
             Fq = 60 * t1 * t2 * xq_all[i] * t38
 
             # Calculando volume do boiler a cada dt:
-            volume = Fq * dt
+            volume = Fq * (dt / 60) # Fq é em L/min e dt em segundos
 
             # Quantidade de gás necessária para esquentar o volume do boiler a cada dt:
             Q = (volume * 1000) * calor_especifico_agua * (Tq_all[i] - Tinf_all[i])
@@ -797,7 +796,7 @@ class MalhaFechadaControladorBoiler():
 
         return custo_eletrico_total, custo_gas_total
 
-    def custo_agua(self, xs_all, TT_all):
+    def custo_agua(self, xs_all, TT_all, dt):
 
         custo_agua_por_m3 = 4.63 # em reais, em POA
 
@@ -805,7 +804,7 @@ class MalhaFechadaControladorBoiler():
 
         for i in range(0, len(TT_all)):
             Fs = (5 * xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_all[i] ** 6 + np.sqrt(6625 * xs_all[i] ** 12 + 640 * xs_all[i] ** 6 + 16)) / (20 * xs_all[i] ** 6 + 1))
-            custo_agua_por_dt = np.append(custo_agua_por_dt, ((Fs / (1000 * 60)) * custo_agua_por_m3))
+            custo_agua_por_dt = np.append(custo_agua_por_dt, ((Fs * dt / (1000 * 60)) * custo_agua_por_m3))
 
         # print(custo_agua_por_dt)
         custo_agua_total = np.sum(custo_agua_por_dt)
