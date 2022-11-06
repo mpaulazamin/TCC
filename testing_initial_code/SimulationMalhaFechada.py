@@ -21,7 +21,7 @@ class ChuveiroTurbinadoSimulation():
         Sr_0: float = 50,
         Sa_0: float = 50,
         xq_0: float = 0.3,
-        xf_0: float = 0.5,
+        xf_0: float = 0.2,
         xs_0: float = 0.4672,
         Fd_0: float = 0,
         Td_0: float = 25,
@@ -60,9 +60,9 @@ class ChuveiroTurbinadoSimulation():
         self.SPh = SPh_0
         self.SPT4a = SPT4a_0
         
-        self.time = 2
+        self.time = 10
         self.dt = 0.01
-        self.time_sample = 2 #minutos
+        self.time_sample = 10 #minutos
         
         # Definindo TU:
         # Time, SP(T4a), Sa, xq, SP(h), xs, Fd, Td, Tinf
@@ -74,9 +74,10 @@ class ChuveiroTurbinadoSimulation():
         print(TU)
 
         # Simulação malha fechada com controladores PID no nível do tanque h e na temperatura final T4a: 
-        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, TU, Kp_T4a = [20.63, 1], Ti_T4a = [1.53, 1e6], 
+        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, TU, Kp_T4a = [18, 1.1], Ti_T4a = [1.53, 1e6], 
                                      Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
                                      Ruido = 0.005, U_bias_T4a = 50, U_bias_h = 0.5, dt = self.dt)
+
         # TT = tempo, YY = variáveis de estado, UU = variáveis manipuladas
         self.TT, self.YY, self.UU = malha_fechada.solve_system()
         
@@ -164,18 +165,18 @@ class ChuveiroTurbinadoSimulation():
         self.last_TU[0][6] = self.Fd 
         self.last_TU[0][7] = self.Td
         self.last_TU[0][8] = self.Tinf
-        print(self.last_TU)
-        print('')
+        #print(self.last_TU)
+        #print('')
         self.TU = np.append(self.last_TU, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
         self.T0 = self.last_T0 # h, T3, Tq, T4a
         self.TU_list = np.append(self.TU_list, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
         print(self.TU)
         print(self.T0)
-        print(self.time)
-        print(self.TU_list)
+        #print(self.time)
+        #print(self.TU_list)
 
         # Simulação malha fechada com controladores PID no nível do tanque h e na temperatura final T4a: 
-        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU, Kp_T4a = [20.63, 1], Ti_T4a = [1.53, 1e6], 
+        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU, Kp_T4a = [18, 1.1], Ti_T4a = [1.53, 1e6], 
                                      Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
                                      Ruido = 0.005, U_bias_T4a = 50, U_bias_h = 0.5, dt = self.dt)
                     
@@ -317,12 +318,15 @@ def main_test():
 
     q_list = []
     T4_list = []
+    SPT4_list = []
     h_list = []
-
-    #We’ll start by setting all the gains to zero. Next, increase the gain until you reach the point when your temperature starts 
-    #to oscillate steadily around the set-point. In order to get rid of unnecessary oscillation, we’ll increase the P gain. 
-    #Keep increasing the numbers and observing the output. Set P and D values to the last digits that did not cause too much oscillation. 
-    #Now the I value comes into play: increase it until you reach the set-point and the oscillation becomes unnoticeable.
+    SPh_list = []
+    Sr_list = []
+    Sa_list = []
+    time_list = []
+    xq_list = []
+    xf_list = [] 
+    xs_list = []
     
        #Time,  SP(T4a),   Sa,    xq,  SP(h),      Xs,   Fd,  Td,  Tinf
     TU=[[ 4,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
@@ -335,8 +339,28 @@ def main_test():
         [18,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
         [20,       38,   50,   0.3,     70,   0.4672,   1,  28,   20],
         [22,       38,   50,   0.3,     70,   0.4672,   1,  28,   20]]   
+
+    TU=[[20,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [30,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [40,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [50,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [60,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
+        [70,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
+        [80,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
+        [90,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
+        [100,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
+        [110,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
+        [120,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [130,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [140,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [150,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [160,       42,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [170,       42,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [180,       42,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [190,       42,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [200,       42,   50,   0.3,     70,   0.4672,   0,  25,   25]]   
     
-    for i in range(0, 10):
+    for i in range(0, 19):
         
         if chuveiro_sim.halted():
             break
@@ -357,16 +381,44 @@ def main_test():
         print('')
         print(state)
         q_list.append(state['quality_of_shower'])
+        SPT4_list.append(state['setpoint_final_temperature'])
         T4_list.append(state['final_temperature'])
+        SPh_list.append(state['setpoint_tank_level'])
         h_list.append(state['tank_level'])
+        Sr_list.append(state['electrical_resistence_fraction'])
+        Sa_list.append(state['gas_boiler_fraction'])
+        time_list.append(TU[i][0])
+        xq_list.append(state['hot_valve_opening'])
+        xf_list.append(state['cold_valve_opening'])
+        xs_list.append(state['out_valve_opening'])
 
-    plt.figure(figsize=(10,7))
-    plt.subplot(3,1,1)
-    plt.plot([i for i in range(len(q_list))], q_list)
-    plt.subplot(3,1,2)
-    plt.plot([i for i in range(len(T4_list))], T4_list)
-    plt.subplot(3,1,3)
-    plt.plot([i for i in range(len(h_list))], h_list)
+    plt.figure(figsize=(20, 15))
+    plt.subplot(4,2,1)
+    plt.plot(time_list, q_list, label='IQB')
+    plt.legend()
+    plt.subplot(4,2,2)
+    plt.plot(time_list, T4_list, label='T4a')
+    plt.plot(time_list, SPT4_list, label='Setpoint T4a')
+    plt.legend()
+    plt.subplot(4,2,3)
+    plt.plot(time_list, h_list, label='h')
+    plt.plot(time_list, SPh_list, label='Setpoint h')
+    plt.legend()
+    plt.subplot(4,2,8)
+    plt.plot(time_list, Sr_list, label='Sr')
+    plt.legend()
+    plt.subplot(4,2,4)
+    plt.plot(time_list, Sa_list, label='Sa')
+    plt.legend()
+    plt.subplot(4,2,5)
+    plt.plot(time_list, xq_list, label='xq')
+    plt.legend()
+    plt.subplot(4,2,6)
+    plt.plot(time_list, xf_list, label='xf')
+    plt.legend()
+    plt.subplot(4,2,7)
+    plt.plot(time_list, xs_list, label='xs')
+    plt.legend()
     plt.show()
     
 if __name__ == "__main__":

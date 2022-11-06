@@ -366,13 +366,16 @@ class MalhaFechada():
     def solve_system(self):
         
         # Definição tempo final e condições iniciais da simulação:
-        Tfinal = self.TU[-1, 0] 
+        # Tfinal = self.TU[-1, 0] 
+        # self.TU[-1, 0] = 10
+        # Tfinal = self.TU[-1, 0]
+        Tfinal = self.TU[1][0]
 
         Yset_bias_T4a = [self.y0[-1], self.y0[1]]
         Yset_bias_h = self.y0[0]
 
         # Armazenamento dos dados resultantes da simulação:
-        TT = np.arange(start = 0, stop = Tfinal + self.dt, step = self.dt, dtype = 'float')
+        TT = np.arange(start = self.TU[0][0], stop = Tfinal + self.dt, step = self.dt, dtype = 'float')
         NT = np.size(TT)
         NY = np.size(self.y0)
         YY = np.zeros((NT, NY))
@@ -482,16 +485,19 @@ class MalhaFechada():
 
         # Custo da parte elétrica:
         potencia_eletrica = 5.5 # potência média de um chuveiro é 5500 W = 5.5 KW
-        custo_kwh = 0.142 # custo bandeira vermelha em POA
+        custo_kwh = 0.390392 # custo bandeira vermelha em POA
 
-        custo_eletrico = np.array([])
+        #custo_eletrico = np.array([])
 
-        for i in range(0, len(TT_all)):
+        #for i in range(0, len(TT_all)):
 
-            valor_eletrico = potencia_eletrica * (Sr_all[i] / 100) * custo_kwh * (dt / 3600)
-            custo_eletrico = np.append(custo_eletrico, valor_eletrico)
+        #    valor_eletrico = potencia_eletrica * (Sr_all[i] / 100) * custo_kwh * (dt * 0.0002777778)
+        #    custo_eletrico = np.append(custo_eletrico, valor_eletrico)
 
-        custo_eletrico_total = np.sum(custo_eletrico)
+        #custo_eletrico_total = np.sum(custo_eletrico)
+
+        sr_mean = np.mean(Sr_all)
+        custo_eletrico_total = potencia_eletrica * (sr_mean / 100) * custo_kwh * 10 / 60
 
         # Custo do gás:
         # Temos que self.volume_boiler = 0.5 * self.h
@@ -503,35 +509,63 @@ class MalhaFechada():
         calor_especifico_agua = 1 # 1 cal/g ou 4186 J/kg
         calor_combustao_gas = 6000 # kcal/kg
 
-        for i in range(0, len(TT_all)):
+        #for i in range(0, len(TT_all)):
 
             # Calculando a vazão Fq que entra no boiler a cada dt:
-            t1 = xq_all[i] ** 0.2
-            t2 = t1 ** 2
-            t5 = xf_all[i] ** 2 
-            t7 = xq_all[i] ** 2 
-            t9 = t1 * xq_all[i] * t7
-            t10 = t9 * t5
-            t14 = t7 ** 2 
-            t16 = t2 * t7 * t14 
-            t17 = t16 * t5 
-            t20 = np.sqrt(0.9e1 * t10 + 0.50e2 * t17) 
-            t26 = t5 ** 2
-            t38 = (np.sqrt(-0.1e1 * (-0.180e3 -0.45e2 * t5 -0.250e3 * t10 - 0.1180e4 * t9 + 0.60e2 * t20) / (0.6552e4 * t10 + 0.648e3 
-                * t5 + 0.16400e5* t17 + 0.900e3 * t9 * t26 + 0.2500e4 * t16 * t26 + 0.81e2 * t26 + 0.55696e5 * t16 + 0.16992e5 
-                * t9 + 0.1296e4)))
-            Fq = 60 * t1 * t2 * xq_all[i] * t38
+            #t1 = xq_all[i] ** 0.2
+            #t2 = t1 ** 2
+            #t5 = xf_all[i] ** 2 
+            #t7 = xq_all[i] ** 2 
+            #t9 = t1 * xq_all[i] * t7
+            #t10 = t9 * t5
+            #t14 = t7 ** 2 
+            #t16 = t2 * t7 * t14 
+            #t17 = t16 * t5 
+            #t20 = np.sqrt(0.9e1 * t10 + 0.50e2 * t17) 
+            #t26 = t5 ** 2
+            #t38 = (np.sqrt(-0.1e1 * (-0.180e3 -0.45e2 * t5 -0.250e3 * t10 - 0.1180e4 * t9 + 0.60e2 * t20) / (0.6552e4 * t10 + 0.648e3 
+            #    * t5 + 0.16400e5* t17 + 0.900e3 * t9 * t26 + 0.2500e4 * t16 * t26 + 0.81e2 * t26 + 0.55696e5 * t16 + 0.16992e5 
+            #    * t9 + 0.1296e4)))
+            #Fq = 60 * t1 * t2 * xq_all[i] * t38
 
             # Calculando volume do boiler a cada dt:
-            volume = Fq * (dt / 60) # Fq é em L/min e dt em segundos
+            #volume = Fq * (dt / 60) # Fq é em L/min e dt em segundos
 
             # Quantidade de gás necessária para esquentar o volume do boiler a cada dt:
-            Q = (volume * 1000) * calor_especifico_agua * (Tq_all[i] - Tinf_all[i])
-            quantidade_gas = Q / (calor_combustao_gas * 1000) # em kg
-            custo_gas_por_dt = custo_gas_por_m3 * (quantidade_gas / 1000)
-            custo_gas = np.append(custo_gas, custo_gas_por_dt)
+            #Q = (volume * 1000) * calor_especifico_agua * (Tq_all[i] - Tinf_all[i])
+            #quantidade_gas = Q / (calor_combustao_gas * 1000) # em kg
+            #custo_gas_por_dt = custo_gas_por_m3 * (quantidade_gas / 1000)
+            #custo_gas = np.append(custo_gas, custo_gas_por_dt)
 
-        custo_gas_total = np.sum(custo_gas)
+        # Calculando a vazão Fq que entra no boiler a cada dt:
+        xq_mean = np.mean(xq_all)
+        xf_mean = np.mean(xf_all)
+        t1 = xq_mean ** 0.2
+        t2 = t1 ** 2
+        t5 = xf_mean ** 2 
+        t7 = xq_mean ** 2 
+        t9 = t1 * xq_mean * t7
+        t10 = t9 * t5
+        t14 = t7 ** 2 
+        t16 = t2 * t7 * t14 
+        t17 = t16 * t5 
+        t20 = np.sqrt(0.9e1 * t10 + 0.50e2 * t17) 
+        t26 = t5 ** 2
+        t38 = (np.sqrt(-0.1e1 * (-0.180e3 -0.45e2 * t5 -0.250e3 * t10 - 0.1180e4 * t9 + 0.60e2 * t20) / (0.6552e4 * t10 + 0.648e3 
+            * t5 + 0.16400e5* t17 + 0.900e3 * t9 * t26 + 0.2500e4 * t16 * t26 + 0.81e2 * t26 + 0.55696e5 * t16 + 0.16992e5 
+            * t9 + 0.1296e4)))
+        Fq = 60 * t1 * t2 * xq_mean * t38
+
+        # Calculando volume do boiler a cada dt:
+        volume = Fq * (10 / 60) # Fq é em L/min e dt em segundos
+
+        Tq_mean = np.mean(Tq_all)
+        Tinf_mean = np.mean(Tinf_all)
+
+        # Quantidade de gás necessária para esquentar o volume do boiler a cada dt:
+        Q = (volume * 1000) * calor_especifico_agua * (Tq_mean - Tinf_mean)
+        quantidade_gas = Q / (calor_combustao_gas * 1000) # em kg
+        custo_gas_total = custo_gas_por_m3 * (quantidade_gas / 1000)
 
         return custo_eletrico_total, custo_gas_total
 
@@ -539,14 +573,18 @@ class MalhaFechada():
 
         custo_agua_por_m3 = 4.63 # em reais, em POA
 
-        custo_agua_por_dt = np.array([])
+        #custo_agua_por_dt = np.array([])
 
-        for i in range(0, len(TT_all)):
-            Fs = (5 * xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_all[i] ** 6 + np.sqrt(6625 * xs_all[i] ** 12 + 640 * xs_all[i] ** 6 + 16)) / (20 * xs_all[i] ** 6 + 1))
-            custo_agua_por_dt = np.append(custo_agua_por_dt, ((Fs * dt / (1000 * 60)) * custo_agua_por_m3))
+        #for i in range(0, len(TT_all)):
+        #    Fs = (5 * xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_all[i] ** 6 + np.sqrt(6625 * xs_all[i] ** 12 + 640 * xs_all[i] ** 6 + 16)) / (20 * xs_all[i] ** 6 + 1))
+        #    custo_agua_por_dt = np.append(custo_agua_por_dt, ((Fs * dt / (1000 * 60)) * custo_agua_por_m3))
 
-        # print(custo_agua_por_dt)
-        custo_agua_total = np.sum(custo_agua_por_dt)
+        #print(custo_agua_por_dt)
+        #custo_agua_total = np.sum(custo_agua_por_dt)
+
+        xs_mean = np.mean(xs_all)
+        Fs_mean = (5 * xs_mean ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_mean ** 6 + np.sqrt(6625 * xs_mean ** 12 + 640 * xs_mean ** 6 + 16)) / (20 * xs_mean ** 6 + 1))
+        custo_agua_total = Fs_mean * (10 / (60 * 1000)) * custo_agua_por_m3 
 
         return custo_agua_total
 class MalhaFechadaControladorBoiler():
