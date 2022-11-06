@@ -83,6 +83,7 @@ class ChuveiroTurbinadoSimulation():
         self.h = self.YY[:,0][-1]
         self.T4a = self.YY[:,-1][-1]
         self.T3 = self.YY[:,1][-1]
+        self.Tq = self.YY[:,2][-1]
         
         # Valores finais das variáveis manipuladas e distúrbios:
         self.Sr = self.UU[:,0][-1]
@@ -157,6 +158,7 @@ class ChuveiroTurbinadoSimulation():
         self.h = self.YY[:,0][-1]
         self.T4a = self.YY[:,-1][-1]
         self.T3 = self.YY[:,1][-1]
+        self.Tq = self.YY[:,2][-1]
         
         # Valores finais das variáveis manipuladas e distúrbios:
         self.Sr = self.UU[:,0][-1]
@@ -183,7 +185,7 @@ class ChuveiroTurbinadoSimulation():
 
         # Salvar o estado atual
         self.last_TU = copy.deepcopy(np.array([[0, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]))
-        self.last_T0 = copy.deepcopy([self.h, self.T3, 30, self.T4a])
+        self.last_T0 = copy.deepcopy([self.h, self.T3, self.Tq, self.T4a])
         
     #def episode_step(self, action: Schema) -> None:
     def episode_step(self, action) -> None:

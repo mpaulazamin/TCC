@@ -27,8 +27,8 @@ class ChuveiroTurbinadoSimulation():
         Td_0: float = 25,
         Tinf: float = 25,
         T0: list = [50,  30 ,  30,  30],
-        SPh_0: float = 60,
-        SPT4a_0: float = 37
+        SPh_0: float = 70,
+        SPT4a_0: float = 38
     ):
         """
         Chuveiro turbinado para simulação.
@@ -71,6 +71,7 @@ class ChuveiroTurbinadoSimulation():
               [0, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf],
               [self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]
         ])
+        print(TU)
 
         # Simulação malha fechada com controladores PID no nível do tanque h e na temperatura final T4a: 
         malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, TU, Kp_T4a = [20.63, 1], Ti_T4a = [1.53, 1e6], 
@@ -146,20 +147,24 @@ class ChuveiroTurbinadoSimulation():
     def step(self):
         
         self.time += self.time_sample 
-        
-        # if self.time >= self.time_sample *2 + 1: #2
-        #     self.TU = np.append(self.last_TU, np.array([[self.time_sample, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
-        #     self.T0 = self.last_T0 # h, T3, Tq, T4a
-        #     print(self.TU)
-        #     print(self.time)
-        # else:
-        #     self.TU = np.append(self.TU, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
-        #     print(self.TU)
 
-        # self.TU_list = np.append(self.TU_list, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
-        # print("TU List: ", self.TU_list)
-
-        print(self.SPh)
+        # Need to replace the values of the old TU for the values of the next TU
+        # This is needed because we are simulating from 2 to 2 minutes, and for each 2 minutes, we can have only ONE action for each variable
+        # For example, if in minute 2, SPh = 70, and in minute 4, SPh = 30, SPh will only by 30 in minute 4
+        # This is not what we want, because SPh = 30 was selected to be the setpoint from minute 2 to minute 4
+        # But the action we selected was valid for the whole episode (2 to 4 minutes), so we need to change SPh in minute 2 to 30
+        # The results from the last episode are taken into account in the initial conditions
+        print('')
+        #print(self.last_TU)
+        self.last_TU[0][1] = self.SPT4a
+        self.last_TU[0][2] = self.Sa
+        self.last_TU[0][3] = self.xq
+        self.last_TU[0][4] = self.SPh
+        self.last_TU[0][5] = self.xs
+        self.last_TU[0][6] = self.Fd 
+        self.last_TU[0][7] = self.Td
+        self.last_TU[0][8] = self.Tinf
+        print(self.last_TU)
         print('')
         self.TU = np.append(self.last_TU, np.array([[self.time, self.SPT4a, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
         self.T0 = self.last_T0 # h, T3, Tq, T4a
@@ -173,6 +178,7 @@ class ChuveiroTurbinadoSimulation():
         malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU, Kp_T4a = [20.63, 1], Ti_T4a = [1.53, 1e6], 
                                      Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
                                      Ruido = 0.005, U_bias_T4a = 50, U_bias_h = 0.5, dt = self.dt)
+                    
         # TT = tempo, YY = variáveis de estado, UU = variáveis manipuladas
         self.TT, self.YY, self.UU = malha_fechada.solve_system()
 
@@ -312,18 +318,23 @@ def main_test():
     q_list = []
     T4_list = []
     h_list = []
+
+    #We’ll start by setting all the gains to zero. Next, increase the gain until you reach the point when your temperature starts 
+    #to oscillate steadily around the set-point. In order to get rid of unnecessary oscillation, we’ll increase the P gain. 
+    #Keep increasing the numbers and observing the output. Set P and D values to the last digits that did not cause too much oscillation. 
+    #Now the I value comes into play: increase it until you reach the set-point and the oscillation becomes unnoticeable.
     
        #Time,  SP(T4a),   Sa,    xq,  SP(h),      Xs,   Fd,  Td,  Tinf
-    TU=[[ 4,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [ 6,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
+    TU=[[ 4,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [ 6,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
         [ 8,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
         [10,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [12,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [14,       48,   50,   0.3,     70,   0.4672,   0,  28,   25],
-        [16,       48,   50,   0.3,     70,   0.4672,   0,  28,   25],
-        [18,       48,   50,   0.3,     70,   0.4672,   0,  28,   25],
-        [20,       48,   50,   0.3,     70,   0.4672,   0,  28,   25],
-        [22,       48,   50,   0.3,     70,   0.4672,   0,  28,   25]]   
+        [12,       38,   50,   0.3,     70,   0.4672,   1,  25,   25],
+        [14,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
+        [16,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
+        [18,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
+        [20,       38,   50,   0.3,     70,   0.4672,   1,  28,   20],
+        [22,       38,   50,   0.3,     70,   0.4672,   1,  28,   20]]   
     
     for i in range(0, 10):
         

@@ -162,7 +162,7 @@ class MalhaAberta():
         for i in range(0, len(TT_all)):
 
             Fs = (5 * xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_all[i] ** 6 + np.sqrt(6625 * xs_all[i] ** 12 + 640 * xs_all[i] ** 6 + 16)) / (20 * xs_all[i] ** 6 + 1))
-            IQB = (1 / math.e) * math.exp((1 - (T4a_all[i] - 38 + 0.02 * Fs ** 2) / 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
+            IQB = (1 / math.e) * math.exp((1 - ((T4a_all[i] - 38 + 0.02 * Fs) / 2) ** 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
             IQB_total = np.append(IQB_total, IQB)
 
         return IQB_total[-1]
@@ -473,8 +473,7 @@ class MalhaFechada():
         for i in range(0, len(TT_all)):
 
             Fs = (5 * xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_all[i] ** 6 + np.sqrt(6625 * xs_all[i] ** 12 + 640 * xs_all[i] ** 6 + 16)) / (20 * xs_all[i] ** 6 + 1))
-            #IQB = (1 / math.e) * math.exp((1 - (T4a_all[i] - 38 + 0.02 * Fs ** 2) / 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
-            IQB = (1 / math.e) * math.exp((1 - (T4a_all[i] - 38 + 0.02 * Fs ** 2) / 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
+            IQB = (1 / math.e) * math.exp((1 - ((T4a_all[i] - 38 + 0.02 * Fs) / 2) ** 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
             IQB_total = np.append(IQB_total, IQB)
 
         return IQB_total[-1]
@@ -735,7 +734,7 @@ class MalhaFechadaControladorBoiler():
         for i in range(0, len(TT_all)):
 
             Fs = (5 * xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_all[i] ** 6 + np.sqrt(6625 * xs_all[i] ** 12 + 640 * xs_all[i] ** 6 + 16)) / (20 * xs_all[i] ** 6 + 1))
-            IQB = (1 / math.e) * math.exp((1 - (T4a_all[i] - 38 + 0.02 * Fs ** 2) / 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
+            IQB = (1 / math.e) * math.exp((1 - ((T4a_all[i] - 38 + 0.02 * Fs) / 2) ** 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
             IQB_total = np.append(IQB_total, IQB)
 
         return IQB_total[-1]
