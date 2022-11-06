@@ -106,12 +106,13 @@ class ChuveiroTurbinadoSimulation():
 
         # Cálculo do custo do banho:
         self.custo_eletrico, self.custo_gas = malha_fechada.custo_banho(self.UU[:,0], # Sr
-                                                                        self.UU[:,2], # xq
-                                                                        self.UU[:,3], # xf
+                                                                        #self.UU[:,2], # xq
+                                                                        #self.UU[:,3], # xf
                                                                         self.YY[:,2], # Tq
                                                                         self.UU[:,7], # Tinf
-                                                                        self.TT,
-                                                                        self.dt)
+                                                                        #self.TT,
+                                                                        #self.dt
+                                                                        self.UU[:,1]) # Sa
 
         # Cálculo do custo da água:
         self.custo_agua = malha_fechada.custo_agua(self.UU[:,4], #xs
@@ -208,12 +209,13 @@ class ChuveiroTurbinadoSimulation():
 
         # Cálculo do custo do banho:
         self.custo_eletrico, self.custo_gas = malha_fechada.custo_banho(self.UU[:,0], # Sr
-                                                                        self.UU[:,2], # xq
-                                                                        self.UU[:,3], # xf
+                                                                        #self.UU[:,2], # xq
+                                                                        #self.UU[:,3], # xf
                                                                         self.YY[:,2], # Tq
                                                                         self.UU[:,7], # Tinf
-                                                                        self.TT,
-                                                                        self.dt)
+                                                                        #self.TT,
+                                                                        #self.dt
+                                                                        self.UU[:,1]) # Sa
 
         # Cálculo do custo da água:
         self.custo_agua = malha_fechada.custo_agua(self.UU[:,4], #xs

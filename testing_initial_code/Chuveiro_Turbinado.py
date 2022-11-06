@@ -481,11 +481,12 @@ class MalhaFechada():
 
         return IQB_total[-1]
 
-    def custo_banho(self, Sr_all, xq_all, xf_all, Tq_all, Tinf_all, TT_all, dt):
+    #def custo_banho(self, Sr_all, xq_all, xf_all, Tq_all, Tinf_all, TT_all, dt):
+    def custo_banho(self, Sr_all, Tq_all, Tinf_all, Sa_all):
 
         # Custo da parte elétrica:
-        potencia_eletrica = 5.5 # potência média de um chuveiro é 5500 W = 5.5 KW
-        custo_kwh = 0.390392 # custo bandeira vermelha em POA
+        #potencia_eletrica = 5.5 # potência média de um chuveiro é 5500 W = 5.5 KW
+        #custo_kwh = 0.390392 # custo bandeira vermelha em POA
 
         #custo_eletrico = np.array([])
 
@@ -496,6 +497,9 @@ class MalhaFechada():
 
         #custo_eletrico_total = np.sum(custo_eletrico)
 
+        potencia_eletrica = 5.5 # potência média de um chuveiro é 5500 W = 5.5 KW
+        custo_kwh = 0.390392 # custo kwh
+
         sr_mean = np.mean(Sr_all)
         custo_eletrico_total = potencia_eletrica * (sr_mean / 100) * custo_kwh * 10 / 60
 
@@ -504,10 +508,10 @@ class MalhaFechada():
         # Vazão é em L/min, 1L de água equivale a aproximadamente 1000g
         # Calcular quanto gás é necessário para aquecer a vazão naquele tempo
 
-        custo_gas = np.array([])
-        custo_gas_por_m3 = 5 # gás de rua, 5 - 7 reais/m3
-        calor_especifico_agua = 1 # 1 cal/g ou 4186 J/kg
-        calor_combustao_gas = 6000 # kcal/kg
+        #custo_gas = np.array([])
+        #custo_gas_por_m3 = 7 # gás de rua, 5 - 7 reais/m3
+        #calor_especifico_agua = 1 # 1 cal/g ou 4186 J/kg
+        #calor_combustao_gas = 6000 # kcal/kg
 
         #for i in range(0, len(TT_all)):
 
@@ -537,34 +541,21 @@ class MalhaFechada():
             #custo_gas_por_dt = custo_gas_por_m3 * (quantidade_gas / 1000)
             #custo_gas = np.append(custo_gas, custo_gas_por_dt)
 
-        # Calculando a vazão Fq que entra no boiler a cada dt:
-        xq_mean = np.mean(xq_all)
-        xf_mean = np.mean(xf_all)
-        t1 = xq_mean ** 0.2
-        t2 = t1 ** 2
-        t5 = xf_mean ** 2 
-        t7 = xq_mean ** 2 
-        t9 = t1 * xq_mean * t7
-        t10 = t9 * t5
-        t14 = t7 ** 2 
-        t16 = t2 * t7 * t14 
-        t17 = t16 * t5 
-        t20 = np.sqrt(0.9e1 * t10 + 0.50e2 * t17) 
-        t26 = t5 ** 2
-        t38 = (np.sqrt(-0.1e1 * (-0.180e3 -0.45e2 * t5 -0.250e3 * t10 - 0.1180e4 * t9 + 0.60e2 * t20) / (0.6552e4 * t10 + 0.648e3 
-            * t5 + 0.16400e5* t17 + 0.900e3 * t9 * t26 + 0.2500e4 * t16 * t26 + 0.81e2 * t26 + 0.55696e5 * t16 + 0.16992e5 
-            * t9 + 0.1296e4)))
-        Fq = 60 * t1 * t2 * xq_mean * t38
-
-        # Calculando volume do boiler a cada dt:
-        volume = Fq * (10 / 60) # Fq é em L/min e dt em segundos
+        custo_gas_por_m3 = 7 # gás de rua, 5 - 7 reais/m3
+        calor_combustao_gas = 6000 # kcal/kg
 
         Tq_mean = np.mean(Tq_all)
         Tinf_mean = np.mean(Tinf_all)
 
-        # Quantidade de gás necessária para esquentar o volume do boiler a cada dt:
-        Q = (volume * 1000) * calor_especifico_agua * (Tq_mean - Tinf_mean)
-        quantidade_gas = Q / (calor_combustao_gas * 1000) # em kg
+        sa_mean = np.mean(Sa_all)
+        potencia_aquecedor = 29000 # kcal/h
+        rendimento = 0.86
+        potencia_util = potencia_aquecedor * rendimento # kcal/h
+        potencia_final = potencia_util * (sa_mean / 100) # kcal/h
+        delta_temperatura = Tq_mean - Tinf_mean 
+        kcal_por_temperatura = potencia_final / delta_temperatura # kcal/h
+        kcal_gasta = kcal_por_temperatura * 10 / 60 # kcal gastas por h
+        quantidade_gas = kcal_gasta / calor_combustao_gas # em kg, quanto de gás gasta por h
         custo_gas_total = custo_gas_por_m3 * (quantidade_gas / 1000)
 
         return custo_eletrico_total, custo_gas_total
@@ -584,7 +575,7 @@ class MalhaFechada():
 
         xs_mean = np.mean(xs_all)
         Fs_mean = (5 * xs_mean ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_mean ** 6 + np.sqrt(6625 * xs_mean ** 12 + 640 * xs_mean ** 6 + 16)) / (20 * xs_mean ** 6 + 1))
-        custo_agua_total = Fs_mean * (10 / (60 * 1000)) * custo_agua_por_m3 
+        custo_agua_total = Fs_mean * (10 / 1000) * custo_agua_por_m3 
 
         return custo_agua_total
 class MalhaFechadaControladorBoiler():
