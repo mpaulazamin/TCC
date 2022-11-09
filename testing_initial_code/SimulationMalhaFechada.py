@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 #from microsoft_bonsai_api.simulator.client import BonsaiClientConfig
 #from microsoft_bonsai_api.simulator.generated.models import SimulatorInterface
 
-from Chuveiro_Turbinado import MalhaFechada, ChuveiroTurbinado, PID_p2
+from Chuveiro_Turbinado import MalhaFechada, ChuveiroTurbinado
 
 # class ChuveiroTurbinadoSimulation(SimulatorSession):
 class ChuveiroTurbinadoSimulation():
@@ -27,7 +27,7 @@ class ChuveiroTurbinadoSimulation():
         Td_0: float = 25,
         Tinf: float = 25,
         T0: list = [50,  30 ,  30,  30],
-        SPh_0: float = 70,
+        SPh_0: float = 60,
         SPT4a_0: float = 38
     ):
         """
@@ -74,7 +74,10 @@ class ChuveiroTurbinadoSimulation():
         print(TU)
 
         # Simulação malha fechada com controladores PID no nível do tanque h e na temperatura final T4a: 
-        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, TU, Kp_T4a = [18, 1.1], Ti_T4a = [1.53, 1e6], 
+        # Parâmetros antigos: Kp_T4a = [20.63, 1], Ti_T4a = [1, 1e6]
+        # Parâmetros novos para t = 10 minutos: Kp_T4a = [37, 4.5], Ti_T4a = [1, 1e6]
+        # Para t = 10 minutos, Kp_T4a = [100, 500], Ti_T4a = [100, 10]
+        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, TU, Kp_T4a = [37, 4.5], Ti_T4a = [1, 1e6], 
                                      Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
                                      Ruido = 0.005, U_bias_T4a = 50, U_bias_h = 0.5, dt = self.dt)
 
@@ -177,7 +180,7 @@ class ChuveiroTurbinadoSimulation():
         #print(self.TU_list)
 
         # Simulação malha fechada com controladores PID no nível do tanque h e na temperatura final T4a: 
-        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU, Kp_T4a = [18, 1.1], Ti_T4a = [1.53, 1e6], 
+        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU, Kp_T4a = [37, 4.5], Ti_T4a = [1, 1e6],
                                      Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
                                      Ruido = 0.005, U_bias_T4a = 50, U_bias_h = 0.5, dt = self.dt)
                     
@@ -189,6 +192,9 @@ class ChuveiroTurbinadoSimulation():
         self.T4a = self.YY[:,-1][-1]
         self.T3 = self.YY[:,1][-1]
         self.Tq = self.YY[:,2][-1]
+
+        # plt.plot(self.TT, self.YY[:,-1])
+        # plt.show()
         
         # Valores finais das variáveis manipuladas e distúrbios:
         self.Sr = self.UU[:,0][-1]
@@ -328,39 +334,51 @@ def main_test():
     time_list = []
     xq_list = []
     xf_list = [] 
-    xs_list = []
-    
-       #Time,  SP(T4a),   Sa,    xq,  SP(h),      Xs,   Fd,  Td,  Tinf
-    TU=[[ 4,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
-        [ 6,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
-        [ 8,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [10,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [12,       38,   50,   0.3,     70,   0.4672,   1,  25,   25],
-        [14,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
-        [16,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
-        [18,       38,   50,   0.3,     70,   0.4672,   1,  28,   25],
-        [20,       38,   50,   0.3,     70,   0.4672,   1,  28,   20],
-        [22,       38,   50,   0.3,     70,   0.4672,   1,  28,   20]]   
+    xs_list = [] 
 
+       #Time,  SP(T4a),   Sa,    xq,  SP(h),      Xs,   Fd,  Td,  Tinf
     TU=[[20,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
         [30,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
         [40,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
         [50,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [60,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
-        [70,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
-        [80,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
-        [90,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
-        [100,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
-        [110,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
-        [120,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [130,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [140,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [150,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [160,       42,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [170,       42,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [180,       42,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [190,       42,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [200,       42,   50,   0.3,     70,   0.4672,   0,  25,   25]]   
+        [60,       38,   50,   0.3,     70,   0.4672,   1,  25,   25],
+        [70,       38,   50,   0.3,     50,   0.4672,   1,  28,   25],
+        [80,       38,   50,   0.3,     50,   0.4672,   1,  28,   25],
+        [90,       38,   50,   0.3,     50,   0.4672,   1,  28,   25],
+        [100,       38,   50,   0.3,     50,   0.4672,   1,  28,   20],
+        [110,       38,   50,   0.3,     50,   0.4672,   1,  28,   20]]   
+
+       #Time,  SP(T4a),   Sa,    xq,  SP(h),      Xs,   Fd,  Td,  Tinf
+    TU=[[20,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [30,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [40,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [50,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [60,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [70,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [80,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [90,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [100,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [110,       38,   50,   0.3,     60,   0.4672,   0,  25,   25]]  
+
+    TU=[[20,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [30,       38,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [40,       38,   50,   0.3,     70,   0.4672,   0,  25,   25],
+        [50,       38,   50,   0.3,     70,   0.4672,   1,  25,   25],
+        [60,       42,   50,   0.3,     70,   0.4672,   1,  25,   25],
+        [70,       42,   50,   0.3,     60,   0.4672,   1,  25,   25],
+        [80,       42,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [90,       42,   50,   0.3,     50,   0.4672,   0,  25,   25],
+        [100,       36,   50,   0.3,     50,   0.4672,   0,  25,   25],
+        [110,       36,   50,   0.3,     50,   0.4672,   0,  25,   25],
+        [120,       36,   50,   0.3,     60,   0.4672,   1,  25,   25],
+        [130,       42,   100,   0.3,     60,   0.4672,   1,  25,   25],
+        [140,       42,   100,   0.3,     50,   0.4672,   1,  25,   25],
+        [150,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
+        [160,       42,   100,   0.3,     50,   0.4672,   0,  25,   25],
+        [170,       42,   100,   0.3,     60,   0.4672,   1,  25,   25],
+        [180,       42,   50,   0.3,     60,   0.4672,   1,  25,   25],
+        [190,       42,   50,   0.3,     60,   0.4672,   0,  25,   25],
+        [200,       42,   50,   0.3,     60,   0.4672,   0,  25,   25]]  
     
     for i in range(0, 19):
         
@@ -389,11 +407,12 @@ def main_test():
         h_list.append(state['tank_level'])
         Sr_list.append(state['electrical_resistence_fraction'])
         Sa_list.append(state['gas_boiler_fraction'])
-        time_list.append(TU[i][0])
+        # time_list.append(TU[i][0])
         xq_list.append(state['hot_valve_opening'])
         xf_list.append(state['cold_valve_opening'])
         xs_list.append(state['out_valve_opening'])
 
+    time_list = range(0, 19)
     plt.figure(figsize=(20, 15))
     plt.subplot(4,2,1)
     plt.plot(time_list, q_list, label='IQB')
