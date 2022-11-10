@@ -329,15 +329,16 @@ class MalhaFechada():
     def custo_banho(self, Sr_all, Tq_all, Tinf_all, Sa_all):
 
         # Custo da parte elétrica:
-        potencia_eletrica = 5.5 # potência média de um chuveiro é 5500 W = 5.5 KW
-        custo_kwh = 0.390392 # custo kwh
+        potencia_eletrica = 7.5 # potência média de um chuveiro é 5500 W = 5.5 KW
+        custo_kwh = 0.9492 # custo kwh, 0.390392
 
         sr_mean = np.mean(Sr_all)
         custo_eletrico_total = potencia_eletrica * (sr_mean / 100) * custo_kwh * 10 / 60
 
         # Custo do gás:
-        custo_gas_por_m3 = 7 # gás de rua, 5 - 7 reais/m3
-        calor_combustao_gas = 6000 # kcal/kg
+        # custo_gas_por_m3 = 7 # gás de rua, 5 - 7 reais/m3
+        # calor_combustao_gas = 6000 # kcal/kg
+        custo_gas_por_kg = 3.7842 # reais/kg - GLP
 
         Tq_mean = np.mean(Tq_all)
         Tinf_mean = np.mean(Tinf_all)
@@ -349,16 +350,15 @@ class MalhaFechada():
         potencia_final = potencia_util * (sa_mean / 100) # kcal/h
 
         kcal_fornecida_no_banho = potencia_final * 10 / 60
-        kg_equivalente_kcal = 11.750 # 1kg equivale a 11750 kcal
+        kg_equivalente_kcal = 11750 # 1kg equivale a 11750 kcal
         quantidade_gas_kg = kcal_fornecida_no_banho / kg_equivalente_kcal # kg
-        print(potencia_final, quantidade_gas_kg)
 
         # delta_temperatura = Tq_mean - Tinf_mean 
         # kcal_por_temperatura = potencia_final / delta_temperatura # kcal/h
         # kcal_gasta = kcal_por_temperatura * 10 / 60 # kcal gastas por h
         # quantidade_gas = kcal_gasta / calor_combustao_gas # em kg, quanto de gás gasta por h
 
-        custo_gas_total = custo_gas_por_m3 * (quantidade_gas_kg / 1000)
+        custo_gas_total = custo_gas_por_kg * quantidade_gas_kg
 
         return custo_eletrico_total, custo_gas_total
 

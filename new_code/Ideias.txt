@@ -1,0 +1,10 @@
+Começar treinando somente com malha do nível do tanque fechada até que a malha do setpoint da temperatura não esteja 100%. 
+Depois, podemos treinar também com malha do nível do tanque + malha do setpoit da temperatura fechadas e comparar os casos.
+Considerando somente malha do tanque fechada, podemos:
+- Treinar sem distúrbios;
+- Treinar com distúrbios simulando verão (Td e Tinf são maiores);
+- Treinar com distúrbios simulando inverno (Td e Tinf são menores);
+- Treinar os três casos acima variando os algoritmos do Bonsai (PPO e SAC).
+- Escolher ações para Sr, Sa, xs, xq, Sp(h), Fd, Td, Tinf.
+- A cada 10 minutos uma ação é tomada.
+- Acho que o tempo de 10 minutos é melhor para mensurar custos também, porque geralmente o tempo médio de um banho é de 10 minutos.
