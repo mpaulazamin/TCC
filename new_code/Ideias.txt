@@ -5,6 +5,8 @@ Considerando somente malha do tanque fechada, podemos:
 - Treinar com distúrbios simulando verão (Td e Tinf são maiores);
 - Treinar com distúrbios simulando inverno (Td e Tinf são menores);
 - Treinar os três casos acima variando os algoritmos do Bonsai (PPO e SAC).
+- Esse caso também facilita os cálculos dos custos, porque para cada episódio, teremos somente 1 Sr, 1 Sa e 1 xs,
+    ao contrário da malha de setpoint da temperatura em que tínhamos Sr variando ao longo do tempo.
 - Escolher ações para Sr, Sa, xs, xq, Sp(h), Fd, Td, Tinf.
 - A cada 10 minutos uma ação é tomada.
 - Acho que o tempo de 10 minutos é melhor para mensurar custos também, porque geralmente o tempo médio de um banho é de 10 minutos.
