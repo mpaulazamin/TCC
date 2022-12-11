@@ -202,11 +202,14 @@ class ChuveiroTurbinadoSimulation():
         self.custo_agua = malha_fechada.custo_agua(self.UU[:,4]) # xs
 
         # Vazão final Fs:
-        self.Fs = (5 * self.xs ** 3 * np.sqrt(30) * np.sqrt(-15 * self.xs ** 6 + np.sqrt(6625 * self.xs ** 12 + 640 * self.xs ** 6 + 16)) / (20 * self.xs** 6 + 1))
+        self.Fs = (5 * self.xs ** 3 * np.sqrt(30) * np.sqrt(-15 * self.xs ** 6 + np.sqrt(6625 * self.xs ** 12 + 640 * self.xs ** 6 + 16)) / (20 * self.xs ** 6 + 1))
                 
         # Salvar o estado atual:
         self.last_TU = copy.deepcopy(np.array([[self.time, self.Sr, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]))
         self.last_T0 = copy.deepcopy([self.h, self.T3, self.Tq, self.T4a])
+
+        # Custo alternativo:
+        malha_fechada.custo_alternativo(self.UU[:,2], self.UU[:,3], self.YY[:,-1], self.UU[:,7], self.YY[:,2], self.UU[:,4], self.TT)
 
     # def episode_step(self, action: Schema) -> None:
     def episode_step(self, action) -> None:
@@ -318,6 +321,13 @@ def main_test():
         [110, 70, 100, 0.3, 40, 0.4672, 0, 25, 25],
         [120, 70, 100, 0.3, 40, 0.4672, 0, 25, 25],
         [130, 70, 100, 0.3, 40, 0.4672, 0, 25, 25]]   
+
+    configs_banho = {
+        'potencia_eletrica': [5.5, 6.5, 7.5],
+        'potencia_aquecedor': [25000, 27000, 29000],
+        'custo_eletrico_kwh': [1, 1.5, 2],
+        'custo_gas_kg': [2, 3, 4],
+    }
     
     for i in range(0, 12):
         
