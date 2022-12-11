@@ -1,6 +1,7 @@
 import math
 import numpy as np
 from scipy.integrate import solve_ivp
+from scipy.optimize import fsolve
 
 def ChuveiroTurbinado(t, 
                       z,                                   
@@ -102,14 +103,6 @@ def PID_p2(SP,
            Umax = 100.0):
     
     """Controlador PID."""
-    
-    # PID -- posicional implementation   
-    # Para sistemas não lineares com ação integral e b!=1 inicializar I_int =  Kp*Yset_bias*(1-b)    
-    # The approximation of the derivative term are stable only when abs(ad)<1. 
-    # The forward difference approximation requires that Td>N*dt/2, i.e., the 
-    # approximation becomes unstable for small values of Td. The other approximation
-    # are stable for all values of Td. 
-    
     # Autor: Jorge Otávio Trierweiler -- jorge.trierweiler@ufrgs.br
     
     if Method == 'Backward':
@@ -136,20 +129,18 @@ def PID_p2(SP,
         ad = np.exp(-N * dt / Td) if Td != 0 else 0.0
         bd = Kp * Td * (1 - ad) / dt
         
-    # Derivative Action:
+    # Ação derivativa:
     D  = ad * D_int + bd * ((c * SP[k] - PV[k]) - (c * SP[k-1] - PV[k-1]))
     
-    # Integral action:
+    # Ação integral
     II = b1 * (SP[k] - PV[k]) + b2 * (SP[k-1] - PV[k-1])
-    #II = Kp*dt/Ti*(SP[k]-PV[k]) if Ti!=0 else 0.0
     I = I_int + II                         
      
-    # Calculate the PID output:
+    # Calcula o output do PID:
     P = Kp * (b * SP[k] - PV[k])
     Uop = U_bias + P + I + D
 
-    # Implement anti-reset windup:
-    # No caso de saturação -- diminuindo o valor integrado a mais
+    # Implementa anti-reset windup:
     if Uop < Umin:
         II = 0.0     
         Uop = Umin
@@ -157,8 +148,24 @@ def PID_p2(SP,
         II = 0.0
         Uop = Umax
     
-    # Return the controller output and PID terms:
+    # Retorna resultado do controlador e termos do PID:
     return np.array([Uop, I_int + II, D])
+
+def ON_OFF (ONOFF, y_medido, y_sp, banda_morta=0.1):
+
+    # Controlador liga e desliga do boiler:
+    ONOFF_actual = ONOFF
+
+    if y_medido < (y_sp - banda_morta):
+        ONOFF_actual = 100
+        return ONOFF_actual
+
+    elif y_medido > (y_sp + banda_morta):
+        ONOFF_actual = 0.0
+        return ONOFF_actual
+
+    else:
+        return ONOFF_actual
 
 class MalhaFechada():
     
@@ -166,16 +173,16 @@ class MalhaFechada():
                  SYS,
                  y0,
                  TU,
-                 Kp_T4a = [1, 2.41],
-                 Ti_T4a = [0.6, 0.1],
+                 Kp_T4a = [5.7, 2.7],
+                 Ti_T4a = [2.9, 1.2],
                  Td_T4a = [0, 0],
                  b_T4a = [1, 1],
-                 Kp_h = 2, 
-                 Ti_h = 0.5, 
+                 Kp_h = 1, 
+                 Ti_h = 0.3, 
                  Td_h = 0.0, 
                  b_h = 1,
                  Ruido = 0.005, 
-                 U_bias_T4a = 50, 
+                 U_bias_T4a = 0.0, 
                  U_bias_h = 0.5, 
                  dt = 0.01):
         
@@ -233,9 +240,8 @@ class MalhaFechada():
         PV1_T4a = np.ones_like(TT) * Yset_bias_T4a[1]
         SP_h = np.zeros_like(TT)
         PV_h = np.ones_like(TT) * Yset_bias_h
+        SP_Tq = np.zeros_like(TT)
         Noise = np.random.normal(0, self.Ruido, len(TT))
-
-        YY[-1, 2] = self.y0[2]
 
         ii = 0    
 
@@ -250,6 +256,8 @@ class MalhaFechada():
 
         YY[0,:] = self.y0
 
+        onoff = 100
+
         for k in np.arange(NT - 1):
 
             #print(TT[k])
@@ -261,16 +269,22 @@ class MalhaFechada():
             # Definição do setpoint e do distúrbio na carga:
             UU[k,:] = self.TU[ii, 1:nu]
 
-            SP0_T4a[k] = self.TU[ii, 1]
-
+            SP0_T4a[k] = self.TU[ii, 3]
             PV0_T4a[k] = YY[k, -1] + Noise[k]  
             PV1_T4a[k] = YY[k, 1] + Noise[k]
 
             SP_h[k] = self.TU[ii, 4]
-
             PV_h[k] = YY[k, 0] + Noise[k]
 
+            SP_Tq[k] = self.TU[ii, 2]
+
             # Armazenamento dos valores calculados:
+            # Vazão de saída:
+            SP_Fs = self.TU[ii,5]
+            def compute_out_flow(xs):
+                return (5*xs**3*np.sqrt(30)*np.sqrt(-15*xs**6 + np.sqrt(6625*xs**12 + 640*xs**6 + 16)) / (20*xs**6 + 1)) - SP_Fs
+            xs_solve = fsolve(compute_out_flow, 0.5)
+
             #Malha nível
             uu_h = PID_p2(SP_h, PV_h, k, I_int_h, D_int_h, self.dt, Method ='Backward',
                           Kp = self.Kp_h, Ti = self.Ti_h, Td = self.Td_h, N = 10, b = self.b_h, 
@@ -283,7 +297,7 @@ class MalhaFechada():
             # Malha externa (C1)
             uu = PID_p2(SP0_T4a, PV0_T4a, k, I_int0_T4a, D_int0_T4a, self.dt, Method ='Backward',
                         Kp = self.Kp_T4a[0], Ti = self.Ti_T4a[0], Td = self.Td_T4a[0], N = 10, b = self.b_T4a[0], 
-                        Umin = 0, Umax = 100, U_bias = Yset_bias_T4a[1])
+                        Umin = 20, Umax = 60, U_bias = Yset_bias_T4a[1])
             SP1_T4a[k] = uu[0]
             I_int0_T4a = uu[1]
             D_int0_T4a = uu[2]
@@ -291,86 +305,78 @@ class MalhaFechada():
             # Malha interna (C2)
             uu = PID_p2(SP1_T4a, PV1_T4a, k, I_int1_T4a, D_int1_T4a, self.dt, Method ='Backward',
                         Kp = self.Kp_T4a[1], Ti = self.Ti_T4a[1], Td = self.Td_T4a[1], N = 10, b = self.b_T4a[1], 
-                        Umin = 0, Umax = 100, U_bias = self.U_bias_T4a)
+                        Umin = 0.0, Umax = 0.4, U_bias = self.U_bias_T4a)
             Uop_T4a = uu[0]
             I_int1_T4a = uu[1]
             D_int1_T4a = uu[2]
 
+            # Malha Boiler
+            Uop_Tq = ON_OFF(onoff, YY[k,2], SP_Tq[k], banda_morta=0.1)
+
             # Definição do setpoint e do distúrbio na carga:
-            UU[k, 0] = Uop_T4a
+            UU[k, 2] = Uop_T4a
             UU[k, 3] = Uop_h
+            UU[k, 1] = Uop_Tq
+            UU[k, 4] = xs_solve
 
             sol = solve_ivp(self.SYS, [TT[k], TT[k+1]], YY[k,:], args = tuple(UU[k,:]), rtol = 1e-6) #,method="RK45",max_step = dt, atol=1, rtol=1)
 
             YY[k+1,:] = sol.y[:,-1]    
 
-        # erro = yy_f-YY
-        UU[k + 1,:] = self.TU[ii, 1:nu]
-        UU[k + 1,0] = Uop_T4a
-        SP0_T4a[k + 1] = self.TU[ii, 1]
+        UU[k + 1,:] = self.TU[ii,1:nu]
+
+        UU[k + 1, 2] = Uop_T4a
+        SP0_T4a[k + 1] = self.TU[ii, 3]
         SP1_T4a[k + 1] = SP1_T4a[k]
 
-        UU[k + 1,3] = Uop_h
+        UU[k + 1, 3] = Uop_h
         SP_h[k + 1] = self.TU[ii, 4]
+        
+        UU[k + 1, 4] = xs_solve
+        
+        UU[k + 1, 1] = Uop_Tq
 
         # Resultados:
         return (TT, YY, UU)
     
-    def compute_iqb(self, T4a_all, xs_all, TT_all):
+    def calculo_iqb(self, T4a, xs):
 
         # Índice de qualidade do banho:
-        IQB_total = np.array([])
+        Fs = (5 * xs ** 3 * np.sqrt(30) * np.sqrt(-15 * xs ** 6 + np.sqrt(6625 * xs ** 12 + 640 * xs ** 6 + 16)) / (20 * xs ** 6 + 1))
+        IQB = (1 / math.e) * math.exp((1 - ((T4a - 38 + 0.02 * Fs) / 2) ** 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
 
-        for i in range(0, len(TT_all)):
+        return IQB
 
-            Fs = (5 * xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_all[i] ** 6 + np.sqrt(6625 * xs_all[i] ** 12 + 640 * xs_all[i] ** 6 + 16)) / (20 * xs_all[i] ** 6 + 1))
-            IQB = (1 / math.e) * math.exp((1 - ((T4a_all[i] - 38 + 0.02 * Fs) / 2) ** 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
-            IQB_total = np.append(IQB_total, IQB)
-
-        return IQB_total[-1]
-
-    def custo_banho(self, Sr_all, Sa_all):
+    def custo_eletrico_banho(self, Sr, potencia_eletrica, custo_eletrico_kwh, time):
 
         # Custo da parte elétrica:
-        potencia_eletrica = 7.5 # potência média de um chuveiro é 5500 W = 5.5 KW
-        custo_kwh = 0.9492 # custo kwh, 0.390392
+        custo_eletrico_total = potencia_eletrica * (Sr / 100) * custo_eletrico_kwh * time / 60
 
-        sr_mean = np.mean(Sr_all)
-        custo_eletrico_total = potencia_eletrica * (sr_mean / 100) * custo_kwh * 10 / 60
+        return custo_eletrico_total
+
+    def custo_gas_banho(self, Sa, potencia_aquecedor, custo_gas_kg, time_sample, dt):
+
+        # Quanto tempo Sa ficou ligado:
+        contagem_Sa_ligado = np.count_nonzero(Sa == 100)
+        tempo_Sa_ligado = (contagem_Sa_ligado * time_sample) / (time_sample / 0.01)
+        max_Sa = 100
 
         # Custo do gás:
-        # custo_gas_por_m3 = 7 # gás de rua, 5 - 7 reais/m3
-        # calor_combustao_gas = 6000 # kcal/kg
-        custo_gas_por_kg = 3.7842 # reais/kg - GLP
-
-        # Tq_mean = np.mean(Tq_all)
-        # Tinf_mean = np.mean(Tinf_all)
-
-        sa_mean = np.mean(Sa_all)
-        potencia_aquecedor = 29000 # kcal/h
-        rendimento = 0.86
+        rendimento = 0.85
         potencia_util = potencia_aquecedor * rendimento # kcal/h
-        potencia_final = potencia_util * (sa_mean / 100) # kcal/h
+        potencia_final = potencia_util * (max_Sa / 100) # kcal/h
 
-        kcal_fornecida_no_banho = potencia_final * 10 / 60
-        kg_equivalente_kcal = 11750 # 1kg equivale a 11750 kcal
+        kcal_fornecida_no_banho = potencia_final * tempo_Sa_ligado / 60
+        kg_equivalente_kcal = 11750 # 1kg de gás equivale a 11750 kcal
         quantidade_gas_kg = kcal_fornecida_no_banho / kg_equivalente_kcal # kg
+        custo_gas_total = custo_gas_kg * quantidade_gas_kg
 
-        # delta_temperatura = Tq_mean - Tinf_mean 
-        # kcal_por_temperatura = potencia_final / delta_temperatura # kcal/h
-        # kcal_gasta = kcal_por_temperatura * 10 / 60 # kcal gastas por h
-        # quantidade_gas = kcal_gasta / calor_combustao_gas # em kg, quanto de gás gasta por h
+        return custo_gas_total 
 
-        custo_gas_total = custo_gas_por_kg * quantidade_gas_kg
-
-        return custo_eletrico_total, custo_gas_total
-
-    def custo_agua(self, xs_all):
+    def custo_agua(self, xs, custo_agua_m3, time):
 
         # Custo da água:
-        custo_agua_por_m3 = 4.63 # em reais, em POA
-        xs_mean = np.mean(xs_all)
-        Fs_mean = (5 * xs_mean ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_mean ** 6 + np.sqrt(6625 * xs_mean ** 12 + 640 * xs_mean ** 6 + 16)) / (20 * xs_mean ** 6 + 1))
-        custo_agua_total = Fs_mean * (10 / 1000) * custo_agua_por_m3 
+        Fs = (5 * xs ** 3 * np.sqrt(30) * np.sqrt(-15 * xs ** 6 + np.sqrt(6625 * xs ** 12 + 640 * xs ** 6 + 16)) / (20 * xs ** 6 + 1))
+        custo_agua_total = Fs * (time / 1000) * custo_agua_m3 
 
         return custo_agua_total

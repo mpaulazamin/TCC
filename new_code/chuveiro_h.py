@@ -102,14 +102,6 @@ def PID_p2(SP,
            Umax = 100.0):
     
     """Controlador PID."""
-    
-    # PID -- posicional implementation   
-    # Para sistemas não lineares com ação integral e b!=1 inicializar I_int =  Kp*Yset_bias*(1-b)    
-    # The approximation of the derivative term are stable only when abs(ad)<1. 
-    # The forward difference approximation requires that Td>N*dt/2, i.e., the 
-    # approximation becomes unstable for small values of Td. The other approximation
-    # are stable for all values of Td. 
-    
     # Autor: Jorge Otávio Trierweiler -- jorge.trierweiler@ufrgs.br
     
     if Method == 'Backward':
@@ -136,20 +128,18 @@ def PID_p2(SP,
         ad = np.exp(-N * dt / Td) if Td != 0 else 0.0
         bd = Kp * Td * (1 - ad) / dt
         
-    # Derivative Action:
+    # Ação derivativa:
     D  = ad * D_int + bd * ((c * SP[k] - PV[k]) - (c * SP[k-1] - PV[k-1]))
     
-    # Integral action:
+    # Ação integral
     II = b1 * (SP[k] - PV[k]) + b2 * (SP[k-1] - PV[k-1])
-    #II = Kp*dt/Ti*(SP[k]-PV[k]) if Ti!=0 else 0.0
     I = I_int + II                         
      
-    # Calculate the PID output:
+    # Calcula o output do PID:
     P = Kp * (b * SP[k] - PV[k])
     Uop = U_bias + P + I + D
 
-    # Implement anti-reset windup:
-    # No caso de saturação -- diminuindo o valor integrado a mais
+    # Implementa anti-reset windup:
     if Uop < Umin:
         II = 0.0     
         Uop = Umin
@@ -157,7 +147,7 @@ def PID_p2(SP,
         II = 0.0
         Uop = Umax
     
-    # Return the controller output and PID terms:
+    # Retorna resultado do controlador e termos do PID:
     return np.array([Uop, I_int + II, D])
 
 class MalhaFechada():
