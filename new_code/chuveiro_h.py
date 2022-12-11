@@ -266,90 +266,39 @@ class MalhaFechada():
         # Resultados:
         return (TT, YY, UU)
     
-    def compute_iqb(self, T4a_all, xs_all, TT_all):
+    def calculo_iqb(self, T4a, xs):
 
         # Índice de qualidade do banho:
-        IQB_total = np.array([])
+        Fs = (5 * xs ** 3 * np.sqrt(30) * np.sqrt(-15 * xs ** 6 + np.sqrt(6625 * xs ** 12 + 640 * xs ** 6 + 16)) / (20 * xs ** 6 + 1))
+        IQB = (1 / math.e) * math.exp((1 - ((T4a - 38 + 0.02 * Fs) / 2) ** 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
 
-        for i in range(0, len(TT_all)):
+        return IQB
 
-            Fs = (5 * xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_all[i] ** 6 + np.sqrt(6625 * xs_all[i] ** 12 + 640 * xs_all[i] ** 6 + 16)) / (20 * xs_all[i] ** 6 + 1))
-            IQB = (1 / math.e) * math.exp((1 - ((T4a_all[i] - 38 + 0.02 * Fs) / 2) ** 2) * np.power((0.506 + math.log10(math.log10((10000 * np.sqrt(Fs)) / (10 + Fs + 0.004 * np.power(Fs, 4))))), 20))
-            IQB_total = np.append(IQB_total, IQB)
-
-        return IQB_total[-1]
-
-    def custo_eletrico_banho(self, Sr_all):
+    def custo_eletrico_banho(self, Sr, potencia_eletrica, custo_eletrico_kwh, time):
 
         # Custo da parte elétrica:
-        potencia_eletrica = 7.5 
-        custo_kwh = 1.5 # custo kwh
-
-        sr_mean = np.mean(Sr_all)
-        custo_eletrico_total = potencia_eletrica * (sr_mean / 100) * custo_kwh * 10 / 60
+        custo_eletrico_total = potencia_eletrica * (Sr / 100) * custo_eletrico_kwh * time / 60
 
         return custo_eletrico_total
 
-    def custo_gas_banho(self, Sa_all):
+    def custo_gas_banho(self, Sa, potencia_aquecedor, custo_gas_kg, time):
 
         # Custo do gás:
-        custo_gas_por_kg = 2 # reais/kg - GLP
-        sa_mean = np.mean(Sa_all)
-        potencia_aquecedor = 29000 # kcal/h
         rendimento = 0.85
         potencia_util = potencia_aquecedor * rendimento # kcal/h
-        potencia_final = potencia_util * (sa_mean / 100) # kcal/h
+        potencia_final = potencia_util * (Sa / 100) # kcal/h
 
-        kcal_fornecida_no_banho = potencia_final * 10 / 60
-        kg_equivalente_kcal = 11750 # 1kg equivale a 11750 kcal
+        kcal_fornecida_no_banho = potencia_final * time / 60
+        kg_equivalente_kcal = 11750 # 1kg de gás equivale a 11750 kcal
         quantidade_gas_kg = kcal_fornecida_no_banho / kg_equivalente_kcal # kg
-        custo_gas_total = custo_gas_por_kg * quantidade_gas_kg
+        custo_gas_total = custo_gas_kg * quantidade_gas_kg
 
         return custo_gas_total 
 
-    def custo_alternativo(self, xq_all, xf_all, T4a_all, Tinf_all, Tq_all, xs_all, TT_all):
-
-        calor_gas_total = np.array([])
-        calor_t4a_total = np.array([])
-
-        for i in range(0, len(TT_all)):
-
-            t1 = xq_all[i] ** 0.2
-            t2 = t1 ** 2
-            t5 = xf_all[i] ** 2 
-            t7 = xq_all[i] ** 2 
-            t9 = t1 * xq_all[i] * t7
-            t10 = t9 * t5
-            t14 = t7 ** 2 
-            t16 = t2 * t7 * t14 
-            t17 = t16 * t5 
-            t20 = np.sqrt(0.9e1 * t10 + 0.50e2 * t17) 
-            t26 = t5 ** 2
-            t38 = (np.sqrt(-0.1e1 * (-0.180e3 -0.45e2 * t5 -0.250e3 * t10 - 0.1180e4 * t9 + 0.60e2 * t20) / (0.6552e4 * t10 + 0.648e3 
-                * t5 + 0.16400e5* t17 + 0.900e3 * t9 * t26 + 0.2500e4 * t16 * t26 + 0.81e2 * t26 + 0.55696e5 * t16 + 0.16992e5 
-                * t9 + 0.1296e4)))
-
-            Fq = 60 * t1 * t2 * xq_all[i] * t38
-            calor_gas = Fq * 0.01 / 60 * 1 * abs(Tq_all[i] - Tinf_all[i])
-            calor_gas_total = np.append(calor_gas_total, calor_gas)
-
-            Fs = (5 * xs_all[i] ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_all[i] ** 6 + np.sqrt(6625 * xs_all[i] ** 12 + 640 * xs_all[i] ** 6 + 16)) / (20 * xs_all[i] ** 6 + 1))
-
-            calor_t4a = Fs * 0.01 / 60 * 1 * abs(T4a_all[i] - Tinf_all[i])
-            calor_t4a_total = np.append(calor_t4a_total, calor_t4a)
-
-        calor_gas_final = np.sum(calor_gas_total)
-        print(calor_gas_final)
-        calor_t4a_final = np.sum(calor_t4a_total)
-        print(calor_t4a_final)
-        # https://www.ehow.com.br/converter-ppm-como_49487/
-
-    def custo_agua(self, xs_all):
+    def custo_agua(self, xs, custo_agua_m3, time):
 
         # Custo da água:
-        custo_agua_por_m3 = 4.63 # em reais, em POA
-        xs_mean = np.mean(xs_all)
-        Fs_mean = (5 * xs_mean ** 3 * np.sqrt(30) * np.sqrt(-15 * xs_mean ** 6 + np.sqrt(6625 * xs_mean ** 12 + 640 * xs_mean ** 6 + 16)) / (20 * xs_mean ** 6 + 1))
-        custo_agua_total = Fs_mean * (10 / 1000) * custo_agua_por_m3 
+        Fs = (5 * xs ** 3 * np.sqrt(30) * np.sqrt(-15 * xs ** 6 + np.sqrt(6625 * xs ** 12 + 640 * xs ** 6 + 16)) / (20 * xs ** 6 + 1))
+        custo_agua_total = Fs * (time / 1000) * custo_agua_m3 
 
         return custo_agua_total
