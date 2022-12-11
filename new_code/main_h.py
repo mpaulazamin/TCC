@@ -69,10 +69,10 @@ class ChuveiroTurbinadoSimulation():
         ])
         # print(TU)
 
-        # Simulação malha fechada com controladores PID no nível do tanque h: 
-        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, TU, Kp_T4a = [37, 4.5], Ti_T4a = [1, 1e6], 
-                                     Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
-                                     Ruido = 0.005, U_bias_T4a = 50, U_bias_h = 0.5, dt = self.dt)
+        # Simulação malha fechada com controlador PID no nível do tanque h: 
+        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, TU,
+                                     Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
+                                     Ruido = 0.005, U_bias_h = 0.5, dt = self.dt)
 
         # TT = tempo, YY = variáveis de estado, UU = variáveis manipuladas:
         self.TT, self.YY, self.UU = malha_fechada.solve_system()
@@ -100,11 +100,11 @@ class ChuveiroTurbinadoSimulation():
         if np.isnan(self.iqb) or self.iqb == None or np.isinf(abs(self.iqb)):
             self.iqb = 0
 
-        # Cálculo do custo do banho:
-        self.custo_eletrico, self.custo_gas = malha_fechada.custo_banho(self.UU[:,0], # Sr
-                                                                        # self.YY[:,2], # Tq
-                                                                        # self.UU[:,7], # Tinf
-                                                                        self.UU[:,1]) # Sa
+        # Custo elétrico do banho:
+        self.custo_eletrico = malha_fechada.custo_eletrico_banho(self.UU[:,0]) # Sr
+
+        # Custo gás do banho:
+        self.custo_gas = malha_fechada.custo_gas_banho(self.UU[:,1]) # Sa
 
         # Cálculo do custo da água:
         self.custo_agua = malha_fechada.custo_agua(self.UU[:,4]) # xs
@@ -139,12 +139,7 @@ class ChuveiroTurbinadoSimulation():
         
         self.time += self.time_sample 
 
-        # Need to replace the values of the old TU for the values of the next TU
-        # This is needed because we are simulating from 2 to 2 minutes, and for each 2 minutes, we can have only ONE action for each variable
-        # For example, if in minute 2, SPh = 70, and in minute 4, SPh = 30, SPh will only by 30 in minute 4
-        # This is not what we want, because SPh = 30 was selected to be the setpoint from minute 2 to minute 4
-        # But the action we selected was valid for the whole episode (2 to 4 minutes), so we need to change SPh in minute 2 to 30
-        # The results from the last episode are taken into account in the initial conditions
+        # Atribuindo valores novos aos valores antigos de TU:
         self.last_TU[0][1] = self.Sr
         self.last_TU[0][2] = self.Sa
         self.last_TU[0][3] = self.xq
@@ -158,15 +153,15 @@ class ChuveiroTurbinadoSimulation():
         self.TU = np.append(self.last_TU, np.array([[self.time, self.Sr, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
         self.T0 = self.last_T0 # h, T3, Tq, T4a
         self.TU_list = np.append(self.TU_list, np.array([[self.time, self.Sr, self.Sa, self.xq, self.SPh, self.xs, self.Fd, self.Td, self.Tinf]]), axis=0)
-        # print(self.TU)
-        # print(self.T0)
+        print(self.TU)
+        print(self.T0)
         # print(self.time)
         # print(self.TU_list)
 
-        # Simulação malha fechada com controladores PID no nível do tanque h e na temperatura final T4a: 
-        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU, Kp_T4a = [37, 4.5], Ti_T4a = [1, 1e6], 
-                                     Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
-                                     Ruido = 0.005, U_bias_T4a = 50, U_bias_h = 0.5, dt = self.dt)
+        # Simulação malha fechada com controlador PID no nível do tanque h: 
+        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU,
+                                     Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
+                                     Ruido = 0.005, U_bias_h = 0.5, dt = self.dt)
                     
         # TT = tempo, YY = variáveis de estado, UU = variáveis manipuladas:
         self.TT, self.YY, self.UU = malha_fechada.solve_system()
@@ -197,11 +192,11 @@ class ChuveiroTurbinadoSimulation():
         if np.isnan(self.iqb) or self.iqb == None or np.isinf(abs(self.iqb)):
             self.iqb = 0
 
-        # Cálculo do custo do banho:
-        self.custo_eletrico, self.custo_gas = malha_fechada.custo_banho(self.UU[:,0], # Sr
-                                                                        # self.YY[:,2], # Tq
-                                                                        # self.UU[:,7], # Tinf
-                                                                        self.UU[:,1]) # Sa
+        # Custo elétrico do banho:
+        self.custo_eletrico = malha_fechada.custo_eletrico_banho(self.UU[:,0]) # Sr
+
+        # Custo gás do banho:
+        self.custo_gas = malha_fechada.custo_gas_banho(self.UU[:,1]) # Sa
 
         # Cálculo do custo da água:
         self.custo_agua = malha_fechada.custo_agua(self.UU[:,4]) # xs
@@ -283,8 +278,8 @@ def main():
     if access_key is None:
         raise ValueError('The access key for the Bonsai workspace is not set.')
 
-    config = BonsaiClientConfig(workspace=workspace, access_key=access_key)
-    # config = None
+    # config = BonsaiClientConfig(workspace=workspace, access_key=access_key)
+    config = None
 
     chuveiro_sim = ChuveiroTurbinadoSimulation(config)
 
@@ -301,7 +296,6 @@ def main_test():
 
     q_list = []
     T4_list = []
-    SPT4_list = []
     h_list = []
     SPh_list = []
     Sr_list = []
@@ -311,19 +305,19 @@ def main_test():
     xf_list = [] 
     xs_list = [] 
 
-       #Time,      Sr,   Sa,    xq,  SP(h),      Xs,   Fd,  Td,  Tinf
-    TU=[[20,       70,   50,   0.3,     60,   0.4672,   0,  25,   25],
-        [30,       70,   50,   0.3,     60,   0.4672,   0,  25,   25],
-        [40,       70,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [50,       70,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [60,       70,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [70,       70,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [80,       70,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [90,       70,   50,   0.3,     70,   0.4672,   0,  25,   25],
-        [100,       100,   100,   0.3,     40,   0.4672,   0,  25,   25],
-        [110,       100,   100,   0.3,     40,   0.4672,   0,  25,   25],
-        [120,       100,   100,   0.3,     40,   0.4672,   0,  25,   25],
-        [130,       100,   100,   0.3,     40,   0.4672,   0,  25,   25]]   
+    # Time, Sr, Sa, xq, SP(h), xs, Fd, Td, Tinf
+    TU=[[20, 70, 100, 0.3, 60, 0.4672, 0, 25, 25],
+        [30, 70, 100, 0.3, 60, 0.4672, 0, 25, 25],
+        [40, 70, 100, 0.3, 60, 0.4672, 0, 25, 25],
+        [50, 70, 100, 0.3, 70, 0.4672, 0, 25, 25],
+        [60, 70, 100, 0.3, 70, 0.4672, 0, 25, 25],
+        [70, 70, 100, 0.3, 70, 0.4672, 0, 25, 25],
+        [80, 70, 100, 0.3, 70, 0.4672, 0, 25, 25],
+        [90, 70, 100, 0.3, 70, 0.4672, 0, 25, 25],
+        [100, 70, 100, 0.3, 40, 0.4672, 0, 25, 25],
+        [110, 70, 100, 0.3, 40, 0.4672, 0, 25, 25],
+        [120, 70, 100, 0.3, 40, 0.4672, 0, 25, 25],
+        [130, 70, 100, 0.3, 40, 0.4672, 0, 25, 25]]   
     
     for i in range(0, 12):
         
@@ -333,7 +327,7 @@ def main_test():
         action = {
             'hot_valve_opening': TU[i][3],
             'out_valve_opening': TU[i][-4],
-            'setpoint_final_temperature': TU[i][1],
+            'electrical_resistence_fraction': TU[i][1],
             'gas_boiler_fraction': TU[i][2],
             'setpoint_tank_level': TU[i][4],
             'disturbance_current_flow': TU[i][6],
@@ -346,7 +340,6 @@ def main_test():
         print('')
         print(state)
         q_list.append(state['quality_of_shower'])
-        SPT4_list.append(state['setpoint_final_temperature'])
         T4_list.append(state['final_temperature'])
         SPh_list.append(state['setpoint_tank_level'])
         h_list.append(state['tank_level'])
@@ -364,7 +357,6 @@ def main_test():
     plt.legend()
     plt.subplot(4,2,2)
     plt.plot(time_list, T4_list, label='T4a')
-    plt.plot(time_list, SPT4_list, label='Setpoint T4a')
     plt.legend()
     plt.subplot(4,2,3)
     plt.plot(time_list, h_list, label='h')
@@ -386,7 +378,7 @@ def main_test():
     plt.plot(time_list, xs_list, label='xs')
     plt.legend()
     plt.show()
-    
+
 if __name__ == "__main__":
-    main_test()
     # main()
+    main_test()

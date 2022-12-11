@@ -195,16 +195,11 @@ class MalhaFechada():
         self.SYS = SYS
         self.y0 = y0
         self.TU = TU
-        self.Kp_T4a = Kp_T4a
-        self.Ti_T4a = Ti_T4a
-        self.Td_T4a = Td_T4a
-        self.b_T4a = b_T4a
         self.Kp_h = Kp_h 
         self.Ti_h = Ti_h 
         self.Td_h = Td_h 
         self.b_h = b_h
         self.Ruido = Ruido 
-        self.U_bias_T4a = U_bias_T4a 
         self.U_bias_h = U_bias_h 
         self.dt = dt 
 
@@ -214,7 +209,6 @@ class MalhaFechada():
         # Tfinal = self.TU[-1, 0] 
         Tfinal = self.TU[1][0]
 
-        # Yset_bias_T4a = [self.y0[-1], self.y0[1]]
         Yset_bias_h = self.y0[0]
 
         # Armazenamento dos dados resultantes da simulação:
@@ -225,10 +219,6 @@ class MalhaFechada():
         YY = np.zeros((NT, NY))
         nu = np.size(self.TU, 1)
         UU = np.zeros((NT, nu-1))
-        # SP0_T4a = np.zeros_like(TT)
-        # SP1_T4a = np.zeros_like(TT)
-        # PV0_T4a = np.ones_like(TT) * Yset_bias_T4a[0]
-        # PV1_T4a = np.ones_like(TT) * Yset_bias_T4a[1]
         SP_h = np.zeros_like(TT)
         PV_h = np.ones_like(TT) * Yset_bias_h
         Noise = np.random.normal(0, self.Ruido, len(TT))
@@ -236,12 +226,6 @@ class MalhaFechada():
         YY[-1, 2] = self.y0[2]
 
         ii = 0    
-
-        # D_int0_T4a = 0.0  
-        # I_int0_T4a = self.Kp_T4a[0] * Yset_bias_T4a[0] * (1 - self.b_T4a[0])
-
-        # D_int1_T4a = 0.0  
-        # I_int1_T4a = self.Kp_T4a[1] * Yset_bias_T4a[1] * (1 - self.b_T4a[1])
 
         D_int_h = 0.0  
         I_int_h = self.Kp_h * Yset_bias_h * (1 - self.b_h)
@@ -259,13 +243,7 @@ class MalhaFechada():
             # Definição do setpoint e do distúrbio na carga:
             UU[k,:] = self.TU[ii, 1:nu]
 
-            # SP0_T4a[k] = self.TU[ii, 1]
-
-            # PV0_T4a[k] = YY[k, -1] + Noise[k]  
-            # PV1_T4a[k] = YY[k, 1] + Noise[k]
-
             SP_h[k] = self.TU[ii, 4]
-
             PV_h[k] = YY[k, 0] + Noise[k]
 
             # Armazenamento dos valores calculados:
@@ -276,25 +254,8 @@ class MalhaFechada():
             Uop_h = uu_h[0]
             I_int_h = uu_h[1]
             D_int_h = uu_h[2]
-            # Malhas T4a:
-            # Malha externa (C1)
-            # uu = PID_p2(SP0_T4a, PV0_T4a, k, I_int0_T4a, D_int0_T4a, self.dt, Method ='Backward',
-            #             Kp = self.Kp_T4a[0], Ti = self.Ti_T4a[0], Td = self.Td_T4a[0], N = 10, b = self.b_T4a[0], 
-            #             Umin = 0, Umax = 100, U_bias = Yset_bias_T4a[1])
-            # SP1_T4a[k] = uu[0]
-            # I_int0_T4a = uu[1]
-            # D_int0_T4a = uu[2]
-            
-            # Malha interna (C2)
-            # uu = PID_p2(SP1_T4a, PV1_T4a, k, I_int1_T4a, D_int1_T4a, self.dt, Method ='Backward',
-            #             Kp = self.Kp_T4a[1], Ti = self.Ti_T4a[1], Td = self.Td_T4a[1], N = 10, b = self.b_T4a[1], 
-            #             Umin = 0, Umax = 100, U_bias = self.U_bias_T4a)
-            # Uop_T4a = uu[0]
-            # I_int1_T4a = uu[1]
-            # D_int1_T4a = uu[2]
 
             # Definição do setpoint e do distúrbio na carga:
-            # UU[k, 0] = Uop_T4a
             UU[k, 3] = Uop_h
 
             sol = solve_ivp(self.SYS, [TT[k], TT[k+1]], YY[k,:], args = tuple(UU[k,:]), rtol = 1e-6) #,method="RK45",max_step = dt, atol=1, rtol=1)
@@ -303,9 +264,6 @@ class MalhaFechada():
 
         # erro = yy_f-YY
         UU[k + 1,:] = self.TU[ii, 1:nu]
-        # UU[k + 1,v0] = Uop_T4a
-        # SP0_T4a[k + 1] = self.TU[ii, 1]
-        # SP1_T4a[k + 1] = SP1_T4a[k]
 
         UU[k + 1,3] = Uop_h
         SP_h[k + 1] = self.TU[ii, 4]
@@ -326,7 +284,7 @@ class MalhaFechada():
 
         return IQB_total[-1]
 
-    def custo_banho(self, Sr_all, Sa_all):
+    def custo_eletrico_banho(self, Sr_all):
 
         # Custo da parte elétrica:
         potencia_eletrica = 7.5 # potência média de um chuveiro é 5500 W = 5.5 KW
@@ -335,14 +293,12 @@ class MalhaFechada():
         sr_mean = np.mean(Sr_all)
         custo_eletrico_total = potencia_eletrica * (sr_mean / 100) * custo_kwh * 10 / 60
 
+        return custo_eletrico_total
+
+    def custo_gas_banho(self, Sa_all):
+
         # Custo do gás:
-        # custo_gas_por_m3 = 7 # gás de rua, 5 - 7 reais/m3
-        # calor_combustao_gas = 6000 # kcal/kg
         custo_gas_por_kg = 3.7842 # reais/kg - GLP
-
-        # Tq_mean = np.mean(Tq_all)
-        # Tinf_mean = np.mean(Tinf_all)
-
         sa_mean = np.mean(Sa_all)
         potencia_aquecedor = 29000 # kcal/h
         rendimento = 0.86
@@ -352,15 +308,9 @@ class MalhaFechada():
         kcal_fornecida_no_banho = potencia_final * 10 / 60
         kg_equivalente_kcal = 11750 # 1kg equivale a 11750 kcal
         quantidade_gas_kg = kcal_fornecida_no_banho / kg_equivalente_kcal # kg
-
-        # delta_temperatura = Tq_mean - Tinf_mean 
-        # kcal_por_temperatura = potencia_final / delta_temperatura # kcal/h
-        # kcal_gasta = kcal_por_temperatura * 10 / 60 # kcal gastas por h
-        # quantidade_gas = kcal_gasta / calor_combustao_gas # em kg, quanto de gás gasta por h
-
         custo_gas_total = custo_gas_por_kg * quantidade_gas_kg
 
-        return custo_eletrico_total, custo_gas_total
+        return custo_gas_total 
 
     def custo_agua(self, xs_all):
 
