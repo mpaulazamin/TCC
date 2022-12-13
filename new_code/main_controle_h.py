@@ -11,7 +11,7 @@ from bonsai_common import SimulatorSession, Schema
 from microsoft_bonsai_api.simulator.client import BonsaiClientConfig
 from microsoft_bonsai_api.simulator.generated.models import SimulatorInterface
 
-from chuveiro_h import MalhaFechada, ChuveiroTurbinado
+from chuveiro_controle_h import MalhaFechada, ChuveiroTurbinado
 
 # class ChuveiroTurbinadoSimulation(SimulatorSession):
 class ChuveiroTurbinadoSimulation():
