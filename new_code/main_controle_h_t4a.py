@@ -398,11 +398,11 @@ def main_test():
         [80, 70, 40, 37, 60, 5, 0, 27, 25],
         [90, 70, 40, 37, 60, 5, 0, 27, 25],
         [100, 70, 40, 37, 60, 6, 0, 27, 25],
-        [110, 90, 40, 39, 60, 6, 0, 25, 24],
-        [120, 90, 40, 39, 60, 5, 0, 25, 24],
+        [110, 90, 42, 39, 60, 6, 0, 25, 24],
+        [120, 90, 42, 39, 60, 5, 0, 25, 24],
         [130, 90, 40, 39, 60, 5, 0, 25, 24]]  
     
-    for i in range(0, 1):
+    for i in range(0, 12):
         
         if chuveiro_sim.halted():
             break
@@ -448,7 +448,6 @@ def main_test():
         Td_list.append(action['temperatura_disturbio'])
         Tinf_list.append(action['temperatura_ambiente'])
 
-    """
     # time_list = range(0, 12)
     plt.figure(figsize=(20, 15))
     plt.subplot(4,2,1)
@@ -486,7 +485,6 @@ def main_test():
     plt.plot(time_list, Fd_list, label='Fd')
     plt.legend()
     plt.show()
-    """
     
 if __name__ == "__main__":
     main_test()
