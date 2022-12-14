@@ -26,7 +26,7 @@ class ChuveiroTurbinadoSimulation():
         Fd_0: float = 0,
         Td_0: float = 25,
         Tinf: float = 25,
-        T0: list = [50,  35,  40,  35],
+        T0: list = [50,  40,  40,  37],
         potencia_eletrica_0: float = 5.5,
         potencia_aquecedor_0: float = 29000,
         custo_eletrico_kwh_0: float = 1,

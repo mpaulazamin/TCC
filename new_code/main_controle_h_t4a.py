@@ -18,15 +18,15 @@ class ChuveiroTurbinadoSimulation():
     
     def reset(
         self,
-        Sr_0: float = 50,
-        Sa_0: float = 50,
+        Sr_0: float = 100,
+        Sa_0: float = 100,
         xq_0: float = 0.3,
-        xf_0: float = 0.2,
+        xf_0: float = 0.3,
         xs_0: float = 0.4672,
         Fd_0: float = 0,
         Td_0: float = 25,
         Tinf: float = 25,
-        T0: list = [50,  35 ,  40,  35],
+        T0: list = [50,  40,  40,  37],
         SPh_0: float = 60,
         SPT4a_0: float = 38,
         SPFs_0: float = 5,
@@ -401,10 +401,8 @@ def main_test():
         [110, 90, 40, 39, 60, 6, 0, 25, 24],
         [120, 90, 40, 39, 60, 5, 0, 25, 24],
         [130, 90, 40, 39, 60, 5, 0, 25, 24]]  
-
-    TU=[[20, 70, 40, 37, 60, 5, 0, 25, 25]]  
     
-    for i in range(0, 2):
+    for i in range(0, 1):
         
         if chuveiro_sim.halted():
             break
@@ -450,6 +448,7 @@ def main_test():
         Td_list.append(action['temperatura_disturbio'])
         Tinf_list.append(action['temperatura_ambiente'])
 
+    """
     # time_list = range(0, 12)
     plt.figure(figsize=(20, 15))
     plt.subplot(4,2,1)
@@ -487,6 +486,7 @@ def main_test():
     plt.plot(time_list, Fd_list, label='Fd')
     plt.legend()
     plt.show()
+    """
     
 if __name__ == "__main__":
     main_test()
