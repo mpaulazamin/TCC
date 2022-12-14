@@ -26,7 +26,7 @@ class ChuveiroTurbinadoSimulation():
         Fd_0: float = 0,
         Td_0: float = 25,
         Tinf: float = 25,
-        T0: list = [50,  30 ,  30,  30],
+        T0: list = [50,  35 ,  40,  35],
         SPh_0: float = 60,
         SPT4a_0: float = 38,
         SPFs_0: float = 5,
@@ -282,9 +282,6 @@ class ChuveiroTurbinadoSimulation():
         self.SPTq = action.get('setpoint_temperatura_final_boiler')
         self.potencia_eletrica = action.get('potencia_eletrica')
         self.potencia_aquecedor = action.get('potencia_aquecedor')
-        self.custo_eletrico_kwh = action.get('custo_eletrico_kwh')
-        self.custo_gas_kg = action.get('custo_gas_kg')
-        self.custo_agua_m3 = action.get('custo_agua_m3')
 
         self.step()
 
@@ -356,9 +353,19 @@ def main():
         continue
 
 def main_test():
+
+    configs_banho = {
+        'potencia_eletrica': [5.5, 6.5, 7.5],
+        'potencia_aquecedor': [25000, 27000, 29000],
+        'custo_eletrico_kwh': [1, 1.5, 2], # reais/kwh
+        'custo_gas_kg': [2, 3, 4], # reais/kg
+        'custo_agua_m3': [3, 4, 5],
+    }
     
     chuveiro_sim = ChuveiroTurbinadoSimulation()
-    chuveiro_sim.reset()
+    chuveiro_sim.reset(custo_eletrico_kwh_0 = random.choice(list(configs_banho['custo_eletrico_kwh'])),
+                       custo_gas_kg_0 = random.choice(list(configs_banho['custo_gas_kg'])),
+                       custo_agua_m3_0 = random.choice(list(configs_banho['custo_agua_m3'])))
     state = chuveiro_sim.get_state()
 
     q_list = []
@@ -395,15 +402,9 @@ def main_test():
         [120, 90, 40, 39, 60, 5, 0, 25, 24],
         [130, 90, 40, 39, 60, 5, 0, 25, 24]]  
 
-    configs_banho = {
-        'potencia_eletrica': [5.5, 6.5, 7.5],
-        'potencia_aquecedor': [25000, 27000, 29000],
-        'custo_eletrico_kwh': [1, 1.5, 2], # reais/kwh
-        'custo_gas_kg': [2, 3, 4], # reais/kg
-        'custo_agua_m3': [3, 4, 5],
-    }
+    TU=[[20, 70, 40, 37, 60, 5, 0, 25, 25]]  
     
-    for i in range(0, 12):
+    for i in range(0, 2):
         
         if chuveiro_sim.halted():
             break
@@ -419,9 +420,6 @@ def main_test():
             'setpoint_temperatura_final_boiler': TU[i][2],
             'potencia_eletrica': random.choice(list(configs_banho['potencia_eletrica'])),
             'potencia_aquecedor': random.choice(list(configs_banho['potencia_aquecedor'])),
-            'custo_eletrico_kwh': random.choice(list(configs_banho['custo_eletrico_kwh'])),
-            'custo_gas_kg': random.choice(list(configs_banho['custo_gas_kg'])),
-            'custo_agua_m3': random.choice(list(configs_banho['custo_agua_m3'])),
         }
 
         print('Ações:')

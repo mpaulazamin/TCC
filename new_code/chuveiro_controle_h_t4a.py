@@ -305,7 +305,7 @@ class MalhaFechada():
             # Malha interna (C2)
             uu = PID_p2(SP1_T4a, PV1_T4a, k, I_int1_T4a, D_int1_T4a, self.dt, Method ='Backward',
                         Kp = self.Kp_T4a[1], Ti = self.Ti_T4a[1], Td = self.Td_T4a[1], N = 10, b = self.b_T4a[1], 
-                        Umin = 0.0, Umax = 0.4, U_bias = self.U_bias_T4a)
+                        Umin = 0.0, Umax = 0.3, U_bias = self.U_bias_T4a)
             Uop_T4a = uu[0]
             I_int1_T4a = uu[1]
             D_int1_T4a = uu[2]
