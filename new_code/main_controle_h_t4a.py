@@ -18,7 +18,7 @@ class ChuveiroTurbinadoSimulation():
     
     def reset(
         self,
-        Sr_0: float = 100,
+        Sr_0: float = 70,
         Sa_0: float = 100,
         xq_0: float = 0.3,
         xf_0: float = 0.3,
@@ -26,11 +26,11 @@ class ChuveiroTurbinadoSimulation():
         Fd_0: float = 0,
         Td_0: float = 25,
         Tinf: float = 25,
-        T0: list = [50,  40,  40,  37],
+        T0: list = [60,  35,  42,  35],
         SPh_0: float = 60,
-        SPT4a_0: float = 38,
+        SPT4a_0: float = 37,
         SPFs_0: float = 5,
-        SPTq_0: float = 40,
+        SPTq_0: float = 42,
         potencia_eletrica_0: float = 5.5,
         potencia_aquecedor_0: float = 29000,
         custo_eletrico_kwh_0: float = 1,
@@ -81,6 +81,8 @@ class ChuveiroTurbinadoSimulation():
         self.custo_eletrico_kwh = custo_eletrico_kwh_0
         self.custo_gas_kg = custo_gas_kg_0
         self.custo_agua_m3 = custo_agua_m3_0
+
+        print(custo_eletrico_kwh_0, custo_gas_kg_0, custo_agua_m3_0)
         
         # Definição do tempo de duração de cada episódio em minutos:
         self.time = 10
@@ -98,10 +100,10 @@ class ChuveiroTurbinadoSimulation():
         # print(TU)
 
         # Simulação malha fechada com controladores PID no nível do tanque h e na temperatura final T4a: 
-        # malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, TU, Kp_T4a = [5.7, 2.7], Ti_T4a = [2.9, 1.2], 
+        # malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, TU, Kp_T4a = [1.46, 1.11], Ti_T4a = [1.2, 1.55], 
         #                              Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
         #                              Ruido = 0.005, U_bias_T4a = 0.0, U_bias_h = 0.5, dt = self.dt)
-        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, TU, Kp_T4a = [1.61, 0.21], Ti_T4a = [1.2, 0.3], 
+        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, TU, Kp_T4a = [1.16, 1.06], Ti_T4a = [2.35, 1.25], 
                                      Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
                                      Ruido = 0.005, U_bias_T4a = 0.0, U_bias_h = 0.5, dt = self.dt)
 
@@ -124,6 +126,8 @@ class ChuveiroTurbinadoSimulation():
         self.Fd = self.UU[:,5][-1]
         self.Td = self.UU[:,6][-1]
         self.Tinf = self.UU[:,7][-1]
+
+        print(self.T4a, self.Tq, self.xq)
     
         # Cálculo do índice de qualidade do banho:
         self.iqb = malha_fechada.calculo_iqb(self.T4a,
@@ -162,19 +166,19 @@ class ChuveiroTurbinadoSimulation():
     def episode_start(self, config) -> None:
         
         self.reset(
-            Sr_0 = config.get('fracao_inicial_resistencia_eletrica') or 50,
-            Sa_0 = config.get('fracao_inicial_aquecimento_boiler') or 50,
+            Sr_0 = config.get('fracao_inicial_resistencia_eletrica') or 70,
+            Sa_0 = config.get('fracao_inicial_aquecimento_boiler') or 100,
             xq_0 = config.get('abertura_inicial_valvula_quente') or 0.3,
-            xf_0 = config.get('abertura_inicial_valvula_fria') or 0.5,
+            xf_0 = config.get('abertura_inicial_valvula_fria') or 0.3,
             xs_0 = config.get('abertura_inicial_valvula_saida') or 0.4672,
             Fd_0 = config.get('vazao_inicial_corrente_disturbio') or 0,
             Td_0 = config.get('temperatura_disturbio_inicial') or 25,
             Tinf = config.get('temperatura_ambiente_inicial') or 25, 
-            # T0 = config.get('variaveis_estado_iniciais') or [50,  30 ,  30,  30],
+            # T0 = config.get('variaveis_estado_iniciais') or [60, 35, 42, 35],
             SPh_0 = config.get('setpoint_inicial_nivel_tanque') or 60,
-            SPT4a_0 = config.get('setpoint_inicial_temperatura_saida') or 38,
+            SPT4a_0 = config.get('setpoint_inicial_temperatura_saida') or 37,
             SPFs_0 = config.get('setpoint_inicial_vazao_saida') or 5,
-            SPTq_0 = config.get('setpoint_inicial_temperatura_boiler') or 40,
+            SPTq_0 = config.get('setpoint_inicial_temperatura_boiler') or 42,
             potencia_eletrica_0 = config.get('potencia_eletrica_inicial') or 5.5,
             potencia_aquecedor_0 = config.get('potencia_aquecedor_0') or 29000,
             custo_eletrico_kwh_0 = config.get('custo_eletrico_kwh_0') or 1,
@@ -207,10 +211,10 @@ class ChuveiroTurbinadoSimulation():
         # print(self.TU_list)
 
         # Simulação malha fechada com controladores PID no nível do tanque h e na temperatura final T4a: 
-        # malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU, Kp_T4a = [5.7, 2.7], Ti_T4a = [2.9, 1.2], 
-        #                               Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
-        #                               Ruido = 0.005, U_bias_T4a = 0.0, U_bias_h = 0.5, dt = self.dt)
-        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU, Kp_T4a = [1.61, 0.21], Ti_T4a = [1.2, 0.3], 
+        # malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU, Kp_T4a = [1.46, 1.11], Ti_T4a = [1.2, 1.55], 
+        #                              Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
+        #                              Ruido = 0.005, U_bias_T4a = 0.0, U_bias_h = 0.5, dt = self.dt)
+        malha_fechada = MalhaFechada(ChuveiroTurbinado, self.T0, self.TU, Kp_T4a = [1.16, 1.06], Ti_T4a = [2.35, 1.25], 
                                      Td_T4a = [0.0, 0.0], b_T4a = [1, 1], Kp_h = 1, Ti_h = 0.3, Td_h = 0.0, b_h = 1, 
                                      Ruido = 0.005, U_bias_T4a = 0.0, U_bias_h = 0.5, dt = self.dt)
                     
@@ -401,6 +405,8 @@ def main_test():
         [110, 90, 42, 39, 60, 6, 0, 25, 24],
         [120, 90, 42, 39, 60, 5, 0, 25, 24],
         [130, 90, 40, 39, 60, 5, 0, 25, 24]]  
+
+    # TU=[[20, 70, 50, 38, 60, 5, 1, 25, 25]]  
     
     for i in range(0, 12):
         
@@ -448,6 +454,7 @@ def main_test():
         Td_list.append(action['temperatura_disturbio'])
         Tinf_list.append(action['temperatura_ambiente'])
 
+    # """
     # time_list = range(0, 12)
     plt.figure(figsize=(20, 15))
     plt.subplot(4,2,1)
@@ -485,6 +492,7 @@ def main_test():
     plt.plot(time_list, Fd_list, label='Fd')
     plt.legend()
     plt.show()
+    # """
     
 if __name__ == "__main__":
     main_test()
