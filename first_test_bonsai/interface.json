@@ -1,0 +1,162 @@
+{
+  "name": "shower_sim",
+  "timeout": 600,
+  "description": {
+    "config": {
+      "category": "Struct",
+      "fields": [
+        {
+          "name": "fracao_inicial_resistencia_eletrica",
+          "type": {
+            "category": "Number",
+            "defaultValue": 0,
+            "comment": ""
+          }
+        },
+        {
+          "name": "fracao_inicial_aquecimento_boiler",
+          "type": {
+            "category": "Number",
+            "defaultValue": 0,
+            "comment": ""
+          }
+        },
+		{
+          "name": "abertura_inicial_valvula_quente",
+          "type": {
+            "category": "Number",
+            "defaultValue": 0,
+            "comment": ""
+          }
+        },
+		{
+          "name": "abertura_inicial_valvula_fria",
+          "type": {
+            "category": "Number",
+            "defaultValue": 0,
+            "comment": ""
+          }
+        },
+		{
+          "name": "abertura_inicial_valvula_saida",
+          "type": {
+            "category": "Number",
+            "defaultValue": 0,
+            "comment": ""
+          }
+        },
+		{
+          "name": "vazao_inicial_corrente_disturbio",
+          "type": {
+            "category": "Number",
+            "defaultValue": 0,
+            "comment": ""
+          }
+        },
+		{
+          "name": "temperatura_disturbio_inicial",
+          "type": {
+            "category": "Number",
+            "defaultValue": 0,
+            "comment": ""
+          }
+        },
+		{
+          "name": "temperatura_ambiente_inicial",
+          "type": {
+            "category": "Number",
+            "defaultValue": 0,
+            "comment": ""
+          }
+        },
+		{
+          "name": "variaveis_estado_iniciais",
+          "type": {
+            "category": "Number",
+            "defaultValue": 0,
+            "comment": ""
+          }
+        },
+		{
+          "name": "setpoint_inicial_nivel_tanque",
+          "type": {
+            "category": "Number",
+            "defaultValue": 0,
+            "comment": ""
+          }
+        }
+      ]
+    },
+    "action": {
+      "category": "Struct",
+      "fields": [
+        {
+          "name": "abertura_valvula_quente",
+          "type": {
+            "category": "Number",
+            "start": 0,
+            "stop": 1
+          }
+        },
+		{
+          "name": "abertura_valvula_saida",
+          "type": {
+            "category": "Number",
+            "start": 0,
+            "stop": 1
+          }
+        },
+		{
+          "name": "fracao_resistencia_eletrica",
+          "type": {
+            "category": "Number",
+            "start": 0,
+            "stop": 100
+          }
+        },
+		{
+          "name": "fracao_aquecimento_boiler",
+          "type": {
+            "category": "Number",
+            "start": 0,
+            "stop": 100
+          }
+        },
+        {
+          "name": "setpoint_nivel_tanque",
+          "type": {
+            "category": "Number",
+            "start": 50,
+            "stop": 70
+          }
+        }
+      ]
+    },
+    "state": {
+      "category": "Struct",
+      "fields": [
+	    {
+          "name": "qualidade_banho",
+          "type": {
+            "category": "Number",
+            "comment": ""
+          }
+        },
+		{
+          "name": "custo_eletrico_banho",
+          "type": {
+            "category": "Number",
+            "comment": ""
+          }
+        },
+		{
+          "name": "custo_gas_banho",
+          "type": {
+            "category": "Number",
+            "comment": ""
+          }
+        }
+      ]
+    }
+  }
+}
